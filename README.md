@@ -131,6 +131,8 @@ The first release is intentionally narrow:
 
 The CLI ships with a matching GitHub Action wrapper in a separate repository: [`felmonon/msw-inspector-action`](https://github.com/felmonon/msw-inspector-action). It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
 
+Marketplace listing: [`MSW Inspector`](https://github.com/marketplace/actions/msw-inspector)
+
 ```yaml
 name: msw coverage
 
