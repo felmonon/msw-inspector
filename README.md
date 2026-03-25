@@ -75,6 +75,8 @@ The first release is intentionally narrow:
 
 The repo ships with a thin GitHub Action wrapper. It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
 
+Because the repository includes `action.yml` and branding metadata, you can publish this Action to the GitHub Marketplace once you cut a tagged release.
+
 ```yaml
 name: msw coverage
 
