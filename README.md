@@ -10,6 +10,8 @@ MSW handlers drift. API calls get added without mocks, and old mocks stay behind
 npm install -D msw-inspector-cli
 ```
 
+The npm package is published as `msw-inspector-cli` because the original `msw-inspector` name is already taken on the registry. The installed binary remains `msw-inspector`.
+
 ## CLI
 
 Run it from the project root:
