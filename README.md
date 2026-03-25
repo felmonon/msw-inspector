@@ -129,7 +129,7 @@ The first release is intentionally narrow:
 
 ## GitHub Action
 
-The repo ships with a thin GitHub Action wrapper. It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
+The CLI ships with a matching GitHub Action wrapper in a separate repository: [`felmonon/msw-inspector-action`](https://github.com/felmonon/msw-inspector-action). It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
 
 ```yaml
 name: msw coverage
@@ -149,15 +149,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx msw-inspector --report-file msw-inspector.json --format json
-      - uses: felmonon/msw-inspector@v1
+      - uses: felmonon/msw-inspector-action@v1
         with:
           summary-file: msw-inspector.json
           comment: true
 ```
 
 The action does not compute a baseline delta yet. It publishes the current report cleanly and predictably.
-
-GitHub Marketplace publication is a separate packaging step. GitHub's current requirement is a dedicated action repository without workflow files, so this repository keeps the CLI and CI together and ships the action directly from GitHub.
 
 ## Limitations
 
