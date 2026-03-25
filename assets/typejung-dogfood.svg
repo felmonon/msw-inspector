@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">msw-inspector dogfood run on typejung.com</title>
+  <desc id="desc">Terminal-style summary showing zero handlers, twenty-four API calls, twenty-four unmocked endpoints, zero stale mocks, zero percent coverage, and seven unsupported patterns skipped.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" rx="24" fill="url(#bg)" />
+  <rect x="24" y="24" width="1152" height="372" rx="18" fill="#020617" stroke="#1f2937" />
+  <circle cx="60" cy="60" r="8" fill="#fb7185" />
+  <circle cx="84" cy="60" r="8" fill="#fbbf24" />
+  <circle cx="108" cy="60" r="8" fill="#34d399" />
+  <text x="140" y="66" fill="#94a3b8" font-family="Menlo, Monaco, Consolas, monospace" font-size="20">typejung.com / real dogfood run</text>
+  <text x="52" y="118" fill="#60a5fa" font-family="Menlo, Monaco, Consolas, monospace" font-size="24">$ npx msw-inspector --cwd ./typejung.com</text>
+  <text x="52" y="170" fill="#e2e8f0" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">✓ 0 handlers found</text>
+  <text x="52" y="210" fill="#e2e8f0" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">✓ 24 API calls found</text>
+  <text x="52" y="250" fill="#fca5a5" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">✗ 24 unmocked endpoints</text>
+  <text x="52" y="290" fill="#e2e8f0" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">✓ 0 stale mocks</text>
+  <text x="52" y="346" fill="#f8fafc" font-family="Menlo, Monaco, Consolas, monospace" font-size="32">Coverage: 0% (0/24)</text>
+  <text x="52" y="382" fill="#fbbf24" font-family="Menlo, Monaco, Consolas, monospace" font-size="24">! 7 unsupported patterns skipped</text>
+</svg>

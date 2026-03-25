@@ -22,6 +22,7 @@ interface ImportBindings {
 interface StaticContext {
   sourceFile: SourceFile
   filePath: string
+  baseUrl?: string
   constCache: Map<string, string | null>
   visiting: Set<string>
 }
@@ -59,6 +60,7 @@ export async function scanHandlers(options: AnalyzerOptions): Promise<HandlerSca
     const context: StaticContext = {
       sourceFile,
       filePath: sourceFile.getFilePath(),
+      baseUrl: options.baseUrl,
       constCache: new Map(),
       visiting: new Set(),
     }
@@ -185,7 +187,7 @@ function resolveHandlerMatcher(node: import('ts-morph').Node, context: StaticCon
     return null
   }
 
-  return createPathPattern(stripQueryAndHash(value))
+  return createPathPattern(stripQueryAndHash(value), context.baseUrl)
 }
 
 function resolveStaticString(node: import('ts-morph').Node, context: StaticContext): string | null {

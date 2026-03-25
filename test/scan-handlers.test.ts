@@ -30,4 +30,21 @@ describe('scanHandlers', () => {
       'bare new URL() is not supported; use .href or .toString()',
     ])
   })
+
+  it('resolves relative handlers against a configured baseUrl', async () => {
+    const result = await scanHandlers({
+      cwd: fixturesDir,
+      baseUrl: 'https://api.example.com/v2/',
+      handlerGlobs: ['src/**/*.{ts,tsx,js,jsx,mts,mjs,cjs}'],
+    })
+
+    expect(result.handlers.map((handler) => [handler.method, handler.pattern.normalized])).toContainEqual([
+      'GET',
+      'https://api.example.com/users/:id',
+    ])
+    expect(result.handlers.map((handler) => [handler.method, handler.pattern.normalized])).toContainEqual([
+      'DELETE',
+      'https://api.example.com/search/active',
+    ])
+  })
 })

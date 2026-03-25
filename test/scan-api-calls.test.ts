@@ -109,4 +109,33 @@ describe('scanApiCalls', () => {
       "fetch(new Request('/skip'))",
     ])
   })
+
+  it('resolves relative API calls against a configured baseUrl', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'msw-inspector-api-'))
+    const sourceDir = path.join(cwd, 'src')
+    await mkdir(sourceDir, { recursive: true })
+    await writeFile(
+      path.join(sourceDir, 'api.ts'),
+      `
+        import axios from 'axios'
+
+        export async function run() {
+          await fetch('/users/123?view=full')
+          await axios.get('health')
+        }
+      `,
+      'utf8',
+    )
+
+    const result = await scanApiCalls({
+      cwd,
+      baseUrl: 'https://api.example.com/v1/',
+      sourceGlobs: ['src/**/*.ts'],
+    })
+
+    expect(result.apiCalls.map((call) => [call.source, call.method, call.pattern.normalized])).toEqual([
+      ['fetch', 'GET', 'https://api.example.com/users/123'],
+      ['axios', 'GET', 'https://api.example.com/v1/health'],
+    ])
+  })
 })

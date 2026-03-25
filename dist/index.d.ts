@@ -1,5 +1,5 @@
-import { A as AnalyzerOptions, C as CoverageReport, H as HandlerRecord, a as ApiCallRecord, U as UnsupportedPattern, R as RoutePattern, S as SourceLocation, b as HttpMethod } from './types-z3Agcn9m.js';
-export { c as CoverageMatch, d as CoverageSummary, P as PatternKind } from './types-z3Agcn9m.js';
+import { A as AnalyzerOptions, C as CoverageReport, H as HandlerRecord, a as ApiCallRecord, U as UnsupportedPattern, R as RoutePattern, S as SourceLocation, b as HttpMethod } from './types-MrDLI7W5.js';
+export { c as CoverageMatch, d as CoverageSummary, P as PatternKind } from './types-MrDLI7W5.js';
 
 declare function analyzeProject(options: AnalyzerOptions): Promise<CoverageReport>;
 
@@ -12,7 +12,7 @@ declare function buildCoverageReport(input: {
 declare function formatCoverageReport(report: CoverageReport): string;
 
 declare function normalizeMethod(value: string | undefined): HttpMethod;
-declare function createPathPattern(raw: string): RoutePattern;
+declare function createPathPattern(raw: string, baseUrl?: string): RoutePattern;
 declare function createRegExpPattern(raw: string): RoutePattern;
 declare function createUnknownPattern(raw: string): RoutePattern;
 declare function normalizePathname(value: string): string;

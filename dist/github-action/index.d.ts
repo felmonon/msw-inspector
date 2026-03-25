@@ -1,4 +1,4 @@
-import { C as CoverageReport } from '../types-z3Agcn9m.js';
+import { C as CoverageReport } from '../types-MrDLI7W5.js';
 
 interface GitHubActionOptions {
     summaryFile: string;

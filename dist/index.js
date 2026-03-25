@@ -246,7 +246,7 @@ function normalizeMethod(value) {
       return "UNKNOWN";
   }
 }
-function createPathPattern(raw) {
+function createPathPattern(raw, baseUrl) {
   const trimmed = raw.trim();
   if (ABSOLUTE_PROTOCOL.test(trimmed)) {
     try {
@@ -269,6 +269,10 @@ function createPathPattern(raw) {
       };
     }
   }
+  const resolvedFromBase = resolveAgainstBaseUrl(raw, trimmed, baseUrl);
+  if (resolvedFromBase) {
+    return resolvedFromBase;
+  }
   const pathname = normalizePathname(trimmed);
   return {
     raw,
@@ -277,6 +281,33 @@ function createPathPattern(raw) {
     pathname,
     origin: null
   };
+}
+function resolveAgainstBaseUrl(raw, trimmed, baseUrl) {
+  if (!baseUrl || !shouldResolveAgainstBaseUrl(trimmed)) {
+    return null;
+  }
+  try {
+    const url = new URL(trimmed, new URL(baseUrl));
+    const pathname = url.pathname;
+    return {
+      raw,
+      kind: "path",
+      normalized: `${url.origin}${pathname}`,
+      pathname,
+      origin: url.origin
+    };
+  } catch {
+    return null;
+  }
+}
+function shouldResolveAgainstBaseUrl(value) {
+  if (!value || value === "*") {
+    return false;
+  }
+  if (value.startsWith("*") || value.startsWith("//")) {
+    return false;
+  }
+  return true;
 }
 function createRegExpPattern(raw) {
   return {
@@ -373,7 +404,7 @@ async function scanApiCalls(options) {
         continue;
       }
       const location = getLocation(sourceFile, call);
-      const pattern = createPathPattern(stripQueryAndHash(resolved.url));
+      const pattern = createPathPattern(stripQueryAndHash(resolved.url), options.baseUrl);
       apiCalls.push({
         id: createRecordId([location.filePath, String(location.line), String(location.column), meta.source, resolved.method, pattern.normalized]),
         method: resolved.method,
@@ -946,6 +977,7 @@ async function scanHandlers(options) {
     const context = {
       sourceFile,
       filePath: sourceFile.getFilePath(),
+      baseUrl: options.baseUrl,
       constCache: /* @__PURE__ */ new Map(),
       visiting: /* @__PURE__ */ new Set()
     };
@@ -1047,7 +1079,7 @@ function resolveHandlerMatcher(node, context) {
   if (value === null) {
     return null;
   }
-  return createPathPattern(stripQueryAndHash2(value));
+  return createPathPattern(stripQueryAndHash2(value), context.baseUrl);
 }
 function resolveStaticString(node, context) {
   if (import_ts_morph2.Node.isParenthesizedExpression(node) || import_ts_morph2.Node.isAsExpression(node) || import_ts_morph2.Node.isNonNullExpression(node)) {

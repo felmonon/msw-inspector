@@ -12,10 +12,11 @@ const program = new Command()
 
 program
   .name('msw-inspector')
-  .description('Find gaps between your MSW handlers and your actual API usage.')
+  .description('Find gaps in your MSW mock coverage.')
   .option('--handlers <globs...>', 'Override handler file globs.', DEFAULT_HANDLER_GLOBS)
   .option('--sources <globs...>', 'Override source file globs.', DEFAULT_SOURCE_GLOBS)
   .option('--exclude <globs...>', 'Exclude file globs.', DEFAULT_EXCLUDE_GLOBS)
+  .option('--base-url <url>', 'Resolve relative handlers and calls against this base URL.')
   .option('--format <format>', 'Output format: text or json.', 'text')
   .option('--report-file <path>', 'Write the JSON report to a file.')
   .option('--min-coverage <percentage>', 'Fail if API mock coverage drops below this percentage.')
@@ -25,6 +26,7 @@ program
   .action(async (options) => {
     const report = await analyzeProject({
       cwd: options.cwd,
+      baseUrl: options.baseUrl,
       handlerGlobs: options.handlers,
       sourceGlobs: options.sources,
       excludeGlobs: options.exclude,

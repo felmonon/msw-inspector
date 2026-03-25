@@ -59,6 +59,7 @@ interface CoverageReport {
 }
 interface AnalyzerOptions {
     cwd: string;
+    baseUrl?: string;
     handlerGlobs?: string[];
     sourceGlobs?: string[];
     excludeGlobs?: string[];

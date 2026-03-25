@@ -86,7 +86,7 @@ export async function scanApiCalls(options: AnalyzerOptions): Promise<ApiCallSca
       }
 
       const location = getLocation(sourceFile, call)
-      const pattern = createPathPattern(stripQueryAndHash(resolved.url))
+      const pattern = createPathPattern(stripQueryAndHash(resolved.url), options.baseUrl)
 
       apiCalls.push({
         id: createRecordId([location.filePath, String(location.line), String(location.column), meta.source, resolved.method, pattern.normalized]),

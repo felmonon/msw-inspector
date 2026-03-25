@@ -64,4 +64,56 @@ describe('analyzeProject', () => {
       { callId: report.apiCalls[1]?.id, handlerId: report.handlers[1]?.id },
     ])
   })
+
+  it('uses baseUrl to disambiguate origin-specific handlers', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'msw-inspector-analyze-'))
+    const mocksDir = path.join(cwd, 'src', 'mocks')
+    const apiDir = path.join(cwd, 'src', 'api')
+
+    await mkdir(mocksDir, { recursive: true })
+    await mkdir(apiDir, { recursive: true })
+
+    await writeFile(
+      path.join(mocksDir, 'handlers.ts'),
+      `
+        import { http } from 'msw'
+
+        export const handlers = [
+          http.get('https://api.example.com/users/:id', () => null),
+          http.get('https://backup.example.com/users/:id', () => null),
+        ]
+      `,
+      'utf8',
+    )
+
+    await writeFile(
+      path.join(apiDir, 'client.ts'),
+      `
+        export async function run() {
+          await fetch('/users/123')
+        }
+      `,
+      'utf8',
+    )
+
+    const report = await analyzeProject({
+      cwd,
+      baseUrl: 'https://backup.example.com',
+      handlerGlobs: ['src/mocks/**/*.ts'],
+      sourceGlobs: ['src/api/**/*.ts'],
+    })
+
+    expect(report.summary).toEqual({
+      mockedCalls: 1,
+      totalCalls: 1,
+      usedHandlers: 1,
+      totalHandlers: 2,
+      staleHandlers: 1,
+      unmockedCalls: 0,
+      percentage: 100,
+    })
+    expect(report.matches).toEqual([
+      { callId: report.apiCalls[0]?.id, handlerId: report.handlers[1]?.id },
+    ])
+  })
 })

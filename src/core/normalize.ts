@@ -25,7 +25,7 @@ export function normalizeMethod(value: string | undefined): HttpMethod {
   }
 }
 
-export function createPathPattern(raw: string): RoutePattern {
+export function createPathPattern(raw: string, baseUrl?: string): RoutePattern {
   const trimmed = raw.trim()
 
   if (ABSOLUTE_PROTOCOL.test(trimmed)) {
@@ -50,6 +50,11 @@ export function createPathPattern(raw: string): RoutePattern {
     }
   }
 
+  const resolvedFromBase = resolveAgainstBaseUrl(raw, trimmed, baseUrl)
+  if (resolvedFromBase) {
+    return resolvedFromBase
+  }
+
   const pathname = normalizePathname(trimmed)
   return {
     raw,
@@ -58,6 +63,38 @@ export function createPathPattern(raw: string): RoutePattern {
     pathname,
     origin: null,
   }
+}
+
+function resolveAgainstBaseUrl(raw: string, trimmed: string, baseUrl: string | undefined): RoutePattern | null {
+  if (!baseUrl || !shouldResolveAgainstBaseUrl(trimmed)) {
+    return null
+  }
+
+  try {
+    const url = new URL(trimmed, new URL(baseUrl))
+    const pathname = url.pathname
+    return {
+      raw,
+      kind: 'path',
+      normalized: `${url.origin}${pathname}`,
+      pathname,
+      origin: url.origin,
+    }
+  } catch {
+    return null
+  }
+}
+
+function shouldResolveAgainstBaseUrl(value: string): boolean {
+  if (!value || value === '*') {
+    return false
+  }
+
+  if (value.startsWith('*') || value.startsWith('//')) {
+    return false
+  }
+
+  return true
 }
 
 export function createRegExpPattern(raw: string): RoutePattern {

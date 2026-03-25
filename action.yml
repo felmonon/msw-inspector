@@ -1,5 +1,5 @@
 name: MSW Inspector
-description: Find gaps between your MSW handlers and your actual API usage.
+description: Find gaps in your MSW mock coverage.
 author: Felmon Fekadu
 inputs:
   summary-file:

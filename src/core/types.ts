@@ -78,6 +78,7 @@ export interface CoverageReport {
 
 export interface AnalyzerOptions {
   cwd: string
+  baseUrl?: string
   handlerGlobs?: string[]
   sourceGlobs?: string[]
   excludeGlobs?: string[]

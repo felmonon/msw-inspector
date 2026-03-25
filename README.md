@@ -1,5 +1,9 @@
 # msw-inspector
 
+![npm version](https://img.shields.io/npm/v/msw-inspector-cli?label=npm)
+![CI](https://github.com/felmonon/msw-inspector/actions/workflows/ci.yml/badge.svg)
+![license](https://img.shields.io/github/license/felmonon/msw-inspector)
+
 Find gaps in your API mock coverage before they reach CI.
 
 MSW handlers drift. API calls get added without mocks, and old mocks stay behind after the code moves on. `msw-inspector` scans both sides, compares them, and reports what is covered, what is not, and what looks stale.
@@ -33,11 +37,14 @@ npx msw-inspector \
   --handlers "src/**/*.{ts,tsx,js,jsx,mts,mjs,cjs}" \
   --sources "src/**/*.{ts,tsx,js,jsx,mts,mjs,cjs}" \
   --exclude "**/dist/**" "**/*.d.ts" \
+  --base-url "https://api.example.com" \
   --report-file msw-inspector.json \
   --format text
 ```
 
 The CLI prints a human-readable summary by default. Use `--format json` when you want the full report for CI or a downstream action.
+
+If your app uses relative URLs but you want origin-aware matching, set `--base-url`. That resolves relative handlers and API calls against one canonical origin, which is useful when the same pathname exists on multiple backends.
 
 ## Output
 
@@ -51,6 +58,10 @@ Text output looks like this:
 
 Coverage: 74% (23/31)
 ```
+
+Here is a real run against `typejung.com`:
+
+![Real dogfood run against typejung.com](./assets/typejung-dogfood.svg)
 
 The JSON report written by `--report-file` includes:
 
@@ -69,6 +80,43 @@ The JSON report written by `--report-file` includes:
 }
 ```
 
+## Example Report
+
+Dogfood run on `typejung.com`:
+
+```json
+{
+  "summary": {
+    "mockedCalls": 0,
+    "totalCalls": 24,
+    "usedHandlers": 0,
+    "totalHandlers": 0,
+    "staleHandlers": 0,
+    "unmockedCalls": 24,
+    "percentage": 0
+  },
+  "unsupported": 7,
+  "sampleUnmocked": [
+    "POST https://oauth2.googleapis.com/token",
+    "GET https://www.googleapis.com/oauth2/v2/userinfo",
+    "POST /api/chat",
+    "POST /api/create-checkout-session"
+  ]
+}
+```
+
+That run surfaced a complete mock gap across auth, billing, and AI endpoints instead of a single missing handler.
+
+## Dogfooding
+
+I ran the analyzer against three real repositories:
+
+- `typejung.com`: `0` handlers, `24` API calls, `24` unmocked endpoints, `7` unsupported dynamic patterns.
+- `msw`: narrowed to the browser test slice, `191` handlers, `2` API calls, `190` stale mocks, `28` unsupported patterns.
+- `oss-msw`: same slice, `191` handlers, `2` API calls, `189` stale mocks, `28` unsupported patterns.
+
+The strongest product signal came from `typejung.com`: it immediately showed that a real app could have a non-trivial API surface with zero MSW coverage. The two MSW repos exercised the other side of the problem, where handlers accumulate and drift stale when the active request surface gets narrower.
+
 ## Supported patterns
 
 The first release is intentionally narrow:
@@ -82,8 +130,6 @@ The first release is intentionally narrow:
 ## GitHub Action
 
 The repo ships with a thin GitHub Action wrapper. It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
-
-Because the repository includes `action.yml` and branding metadata, you can publish this Action to the GitHub Marketplace once you cut a tagged release.
 
 ```yaml
 name: msw coverage
@@ -110,6 +156,8 @@ jobs:
 ```
 
 The action does not compute a baseline delta yet. It publishes the current report cleanly and predictably.
+
+GitHub Marketplace publication is a separate packaging step. GitHub's current requirement is a dedicated action repository without workflow files, so this repository keeps the CLI and CI together and ships the action directly from GitHub.
 
 ## Limitations
 
