@@ -7,7 +7,7 @@ MSW handlers drift. API calls get added without mocks, and old mocks stay behind
 ## Install
 
 ```bash
-npm install -D msw-inspector
+npm install -D @felmonon/msw-inspector
 ```
 
 ## CLI
@@ -16,6 +16,12 @@ Run it from the project root:
 
 ```bash
 npx msw-inspector
+```
+
+Or run it without installing first:
+
+```bash
+npx @felmonon/msw-inspector
 ```
 
 Useful flags:

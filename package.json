@@ -1,5 +1,5 @@
 {
-  "name": "msw-inspector",
+  "name": "@felmonon/msw-inspector",
   "version": "0.1.0",
   "description": "Find gaps between your MSW handlers and your actual API usage.",
   "license": "MIT",
