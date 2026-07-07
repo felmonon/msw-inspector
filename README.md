@@ -46,6 +46,8 @@ The CLI prints a human-readable summary by default. Use `--format json` when you
 
 If your app uses relative URLs but you want origin-aware matching, set `--base-url`. That resolves relative handlers and API calls against one canonical origin, which is useful when the same pathname exists on multiple backends.
 
+For a copy-paste Vite + Vitest + MSW setup, see [`docs/examples/vite-vitest.md`](docs/examples/vite-vitest.md).
+
 ## Output
 
 Text output looks like this:
