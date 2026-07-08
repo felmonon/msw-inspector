@@ -41,7 +41,7 @@ describe('formatCoverageReport', () => {
     expect(output).not.toContain('unsupported patterns skipped')
   })
 
-  it('lists file:line, kind, and reason for each unsupported pattern', () => {
+  it('lists file:line:column, kind, and reason for each unsupported pattern', () => {
     const report = baseReport({
       unsupported: [
         unsupported({ reason: 'dynamic pattern', location: { filePath: 'handlers.ts', line: 12, column: 3 } }),
@@ -49,7 +49,7 @@ describe('formatCoverageReport', () => {
     })
     const output = formatCoverageReport(report)
     expect(output).toContain('1 unsupported patterns skipped')
-    expect(output).toContain('handlers.ts:12 (handler)')
+    expect(output).toContain('handlers.ts:12:3 (handler)')
     expect(output).toContain('dynamic pattern')
   })
 
