@@ -1,0 +1,15 @@
+{
+  "name": "msw-inspector-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "inspect": "msw-inspector --report-file msw-inspector.json --format text",
+    "inspect:json": "msw-inspector --report-file msw-inspector.json --format json"
+  },
+  "devDependencies": {
+    "msw": "latest",
+    "msw-inspector-cli": "latest",
+    "typescript": "latest"
+  }
+}
