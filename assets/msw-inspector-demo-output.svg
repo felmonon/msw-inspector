@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-labelledby="title desc">
+  <title id="title">MSW Inspector demo terminal output</title>
+  <desc id="desc">Terminal-style output showing one unmocked API call, one stale mock, and fifty percent coverage.</desc>
+  <rect width="960" height="520" rx="24" fill="#111827"/>
+  <rect x="24" y="24" width="912" height="472" rx="18" fill="#0b1020" stroke="#263044"/>
+  <circle cx="56" cy="54" r="7" fill="#ef4444"/>
+  <circle cx="82" cy="54" r="7" fill="#f59e0b"/>
+  <circle cx="108" cy="54" r="7" fill="#22c55e"/>
+  <text x="48" y="104" fill="#d1d5db" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">$ npx msw-inspector</text>
+  <text x="48" y="154" fill="#86efac" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">✓ 2 handlers found</text>
+  <text x="48" y="192" fill="#86efac" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">✓ 2 API calls found</text>
+  <text x="48" y="230" fill="#fca5a5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">✗ 1 unmocked endpoints</text>
+  <text x="48" y="268" fill="#fca5a5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">✗ 1 stale mocks</text>
+  <text x="48" y="326" fill="#e5e7eb" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24" font-weight="700">Coverage: 50% (1/2)</text>
+  <text x="48" y="382" fill="#f9fafb" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22" font-weight="700">Unmocked API calls</text>
+  <text x="48" y="422" fill="#fca5a5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">✗ POST /api/create-checkout-session</text>
+  <text x="72" y="458" fill="#9ca3af" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="18">Suggested handler: http.post('/api/create-checkout-session', ...)</text>
+</svg>
