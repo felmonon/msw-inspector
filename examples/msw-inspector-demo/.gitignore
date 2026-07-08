@@ -1,0 +1,4 @@
+node_modules
+msw-inspector.json
+dist
+coverage
