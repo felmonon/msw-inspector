@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
+import { version as PACKAGE_VERSION } from '../../package.json'
+
 import type {
   ApiCallRecord,
   CoverageReport,
@@ -34,67 +36,85 @@ export async function readCoverageReport(summaryFile: string): Promise<CoverageR
   return parsed
 }
 
+const REPO_URL = 'https://github.com/felmonon/msw-inspector'
+
+function verdictEmoji(report: CoverageReport): string {
+  if (report.summary.unmockedCalls > 0) {
+    return '\u{1F534}'
+  }
+
+  if ((report.summary.ambiguousCalls ?? 0) > 0 || report.summary.staleHandlers > 0) {
+    return '\u{1F7E1}'
+  }
+
+  return '\u{1F7E2}'
+}
+
+function coverageBar(percentage: number): string {
+  const filled = Math.max(0, Math.min(10, Math.round(percentage / 10)))
+  return `\`${'\u25B0'.repeat(filled)}${'\u25B1'.repeat(10 - filled)}\` ${percentage}%`
+}
+
+function footer(): string {
+  return `\u{1F6E1} [msw-inspector](${REPO_URL}) v${PACKAGE_VERSION} \u00B7 [docs](${REPO_URL}#readme) \u00B7 [report an issue](${REPO_URL}/issues)`
+}
+
 export function renderJobSummary(report: CoverageReport): string {
   const lines: string[] = []
-  lines.push('## MSW mock coverage')
+  lines.push(`## ${verdictEmoji(report)} MSW mock coverage: ${report.summary.percentage}% (${report.summary.mockedCalls}/${report.summary.totalCalls})`)
   lines.push('')
-  lines.push('| Metric | Value |')
-  lines.push('| --- | ---: |')
-  lines.push(`| Coverage | ${report.summary.percentage}% |`)
-  lines.push(`| Mocked API calls | ${report.summary.mockedCalls} / ${report.summary.totalCalls} |`)
-  lines.push(`| Used handlers | ${report.summary.usedHandlers} / ${report.summary.totalHandlers} |`)
-  lines.push(`| Unmocked API calls | ${report.summary.unmockedCalls} |`)
-  lines.push(`| Ambiguous API calls | ${report.summary.ambiguousCalls ?? 0} |`)
-  lines.push(`| Stale handlers | ${report.summary.staleHandlers} |`)
+  lines.push(coverageBar(report.summary.percentage))
+  lines.push('')
+  lines.push('| Unmocked | Ambiguous | Stale handlers | Handlers used |')
+  lines.push('| ---: | ---: | ---: | ---: |')
+  lines.push(`| ${report.summary.unmockedCalls} | ${report.summary.ambiguousCalls ?? 0} | ${report.summary.staleHandlers} | ${report.summary.usedHandlers}/${report.summary.totalHandlers} |`)
 
   if (report.unsupported.length > 0) {
     lines.push('')
     lines.push(`Unsupported patterns skipped: ${report.unsupported.length}`)
   }
 
+  lines.push('')
+  lines.push(footer())
+
   return `${lines.join('\n')}\n`
 }
 
 export function renderStickyComment(report: CoverageReport, title = DEFAULT_COMMENT_TITLE, limit = DEFAULT_COMMENT_LIMIT): string {
-  const unmocked = takeLabels(report.apiCalls, report.unmockedCallIds, formatApiCall, limit)
-  const ambiguous = takeLabels(report.apiCalls, report.ambiguousCallIds ?? [], formatApiCall, limit)
-  const stale = takeLabels(report.handlers, report.staleHandlerIds, formatHandler, limit)
-  const unsupported = report.unsupported.slice(0, limit).map(formatUnsupported)
-
   const lines: string[] = []
   lines.push(COMMENT_MARKER)
-  lines.push(`## ${title}`)
+  lines.push(`## ${verdictEmoji(report)} ${title}: ${report.summary.percentage}% (${report.summary.mockedCalls}/${report.summary.totalCalls})`)
   lines.push('')
-  lines.push(`Coverage: **${report.summary.percentage}%** (${report.summary.mockedCalls}/${report.summary.totalCalls})`)
-  lines.push(`Handlers used: **${report.summary.usedHandlers}** / ${report.summary.totalHandlers}`)
-  lines.push(`Unmocked API calls: **${report.summary.unmockedCalls}**`)
-  lines.push(`Stale handlers: **${report.summary.staleHandlers}**`)
+  lines.push(coverageBar(report.summary.percentage))
+  lines.push('')
+  lines.push('| Unmocked | Ambiguous | Stale handlers | Handlers used |')
+  lines.push('| ---: | ---: | ---: | ---: |')
+  lines.push(`| ${report.summary.unmockedCalls} | ${report.summary.ambiguousCalls ?? 0} | ${report.summary.staleHandlers} | ${report.summary.usedHandlers}/${report.summary.totalHandlers} |`)
 
-  if (unmocked.length > 0) {
-    lines.push('')
-    lines.push('### Unmocked API calls')
-    lines.push(...unmocked.map((value) => `- ${value}`))
-  }
+  lines.push(...detailsSection('Unmocked API calls', takeLabels(report.apiCalls, report.unmockedCallIds, formatApiCall, limit), report.unmockedCallIds.length))
+  lines.push(...detailsSection('Ambiguous API calls', takeLabels(report.apiCalls, report.ambiguousCallIds ?? [], formatApiCall, limit), (report.ambiguousCallIds ?? []).length))
+  lines.push(...detailsSection('Stale handlers', takeLabels(report.handlers, report.staleHandlerIds, formatHandler, limit), report.staleHandlerIds.length))
+  lines.push(...detailsSection('Unsupported patterns', report.unsupported.slice(0, limit).map(formatUnsupported), report.unsupported.length))
 
-  if (ambiguous.length > 0) {
-    lines.push('')
-    lines.push('### Ambiguous API calls')
-    lines.push(...ambiguous.map((value) => `- ${value}`))
-  }
-
-  if (stale.length > 0) {
-    lines.push('')
-    lines.push('### Stale handlers')
-    lines.push(...stale.map((value) => `- ${value}`))
-  }
-
-  if (unsupported.length > 0) {
-    lines.push('')
-    lines.push('### Unsupported patterns')
-    lines.push(...unsupported.map((value) => `- ${value}`))
-  }
+  lines.push('')
+  lines.push('---')
+  lines.push(footer())
 
   return `${lines.join('\n')}\n`
+}
+
+function detailsSection(title: string, items: string[], total: number): string[] {
+  if (items.length === 0) {
+    return []
+  }
+
+  const lines = ['', '<details>', `<summary>${title} (${total})</summary>`, '']
+  lines.push(...items.map((value) => `- ${value}`))
+  if (total > items.length) {
+    lines.push(`- \u2026 and ${total - items.length} more`)
+  }
+  lines.push('', '</details>')
+  return lines
 }
 
 export async function writeJobSummary(report: CoverageReport): Promise<void> {
@@ -227,15 +247,15 @@ function takeLabels<T extends { id: string }>(
 }
 
 function formatHandler(handler: HandlerRecord): string {
-  return `${handler.method} ${handler.pattern.normalized}`
+  return `\`${handler.method} ${handler.pattern.normalized}\` \u2014 ${handler.location.filePath}:${handler.location.line}`
 }
 
 function formatApiCall(call: ApiCallRecord): string {
-  return `${call.method} ${call.pattern.normalized}`
+  return `\`${call.method} ${call.pattern.normalized}\` \u2014 ${call.location.filePath}:${call.location.line}`
 }
 
 function formatUnsupported(item: UnsupportedPattern): string {
-  return `${item.kind}: ${item.expressionText} (${item.reason})`
+  return `\`${item.expressionText}\` \u2014 ${item.location.filePath}:${item.location.line} (${item.reason})`
 }
 
 function getId<T extends { id: string }>(item: T): string {

@@ -69,7 +69,9 @@ Coverage: 66.7% (4/6)
 Unmocked API calls:
   POST /api/chat  src/chat.ts:12
   GET /api/profile  src/profile.ts:33
-! 1 unsupported patterns skipped
+◌ 1 unsupported patterns skipped
+
+✗ 66.7% mock coverage — 2 unmocked calls
 ```
 
 Text output lists up to 10 unmocked calls and stale handlers with their source locations. Use `--limit <count>` to show more or fewer.

@@ -16,9 +16,13 @@ export function formatCoverageReport(report: CoverageReport, options: FormatOpti
     `${pc.green('✓')} ${report.apiCalls.length} API calls found`,
     `${report.summary.unmockedCalls > 0 ? pc.red('✗') : pc.green('✓')} ${report.summary.unmockedCalls} unmocked endpoints`,
     `${report.summary.staleHandlers > 0 ? pc.red('✗') : pc.green('✓')} ${report.summary.staleHandlers} stale mocks`,
-    '',
-    `Coverage: ${report.summary.percentage}% (${report.summary.mockedCalls}/${report.summary.totalCalls})`,
   ]
+
+  if (report.summary.ambiguousCalls > 0) {
+    lines.push(`${pc.yellow('◌')} ${report.summary.ambiguousCalls} ambiguous calls`)
+  }
+
+  lines.push('', `Coverage: ${report.summary.percentage}% (${report.summary.mockedCalls}/${report.summary.totalCalls})`)
 
   const unmocked = pickRecords(report.apiCalls, report.unmockedCallIds)
   if (unmocked.length > 0) {
@@ -39,7 +43,7 @@ export function formatCoverageReport(report: CoverageReport, options: FormatOpti
   }
 
   if (report.unsupported.length > 0) {
-    lines.push('', `${pc.yellow('!')} ${report.unsupported.length} unsupported patterns skipped`)
+    lines.push('', `${pc.yellow('◌')} ${report.unsupported.length} unsupported patterns skipped`)
     const shown = report.unsupported.slice(0, 5)
     for (const pattern of shown) {
       lines.push(
@@ -51,7 +55,31 @@ export function formatCoverageReport(report: CoverageReport, options: FormatOpti
       lines.push(`  ...and ${remaining} more`)
     }
   }
+
+  lines.push('', verdictLine(report))
+
   return lines.join('\n')
+}
+
+function verdictLine(report: CoverageReport): string {
+  const { summary } = report
+
+  if (summary.totalCalls === 0 && summary.totalHandlers === 0) {
+    return pc.bold(pc.yellow('◌ nothing scanned — no handlers or API calls found'))
+  }
+
+  if (summary.unmockedCalls > 0) {
+    const noun = summary.unmockedCalls === 1 ? 'unmocked call' : 'unmocked calls'
+    return pc.bold(pc.red(`✗ ${summary.percentage}% mock coverage — ${summary.unmockedCalls} ${noun}`))
+  }
+
+  if (summary.ambiguousCalls > 0) {
+    const noun = summary.ambiguousCalls === 1 ? 'ambiguous call' : 'ambiguous calls'
+    return pc.bold(pc.yellow(`◌ ${summary.percentage}% mock coverage — ${summary.ambiguousCalls} ${noun} to review`))
+  }
+
+  const noun = summary.totalCalls === 1 ? 'call' : 'calls'
+  return pc.bold(pc.green(`✓ ${summary.percentage}% mock coverage — all ${summary.totalCalls} ${noun} mocked`))
 }
 
 function pickRecords<T extends { id: string }>(records: readonly T[], ids: readonly string[]): T[] {
