@@ -148,7 +148,7 @@ The first release is intentionally narrow:
 - `msw` `http.*` handlers
 - legacy `msw` `rest.*` handlers
 - handler matchers from string literals, static template literals, static `const`s, `new URL(...).href`, `new URL(...).toString()`, and `String(new URL(...))`
-- `fetch(...)`, `window.fetch(...)`, `globalThis.fetch(...)`
+- `fetch(...)`, `window.fetch(...)`, `globalThis.fetch(...)`, and `fetch(new Request(...))` with static arguments
 - common `axios` call shapes, including `axios.get(...)`, `axios.request(...)`, `axios(...)`, and same-file `axios.create(...)` instances
 
 ## GitHub Action

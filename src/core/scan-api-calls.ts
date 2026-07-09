@@ -226,7 +226,58 @@ function resolveApiCall(
 
 function resolveFetchCall(call: CallExpression, context: StaticContext): { url: string; method: HttpMethod } | null {
   const [input, initArg] = call.getArguments()
-  const url = resolveString(input, context)
+
+  const request = input ? resolveRequestConstruction(input, context) : null
+  const url = request ? request.url : resolveString(input, context)
+  if (!url) {
+    return null
+  }
+
+  if (!initArg) {
+    return { url, method: request ? request.method : 'GET' }
+  }
+
+  const init = resolveObjectLiteral(initArg, context)
+  if (!init) {
+    return { url, method: 'UNKNOWN' }
+  }
+
+  // Per the fetch spec, the init argument overrides the Request's own method.
+  return {
+    url,
+    method: resolveMethodFromObject(init, context) ?? (request ? request.method : 'GET'),
+  }
+}
+
+function resolveRequestConstruction(node: import('ts-morph').Node, context: StaticContext): { url: string; method: HttpMethod } | null {
+  if (Node.isParenthesizedExpression(node) || Node.isAsExpression(node) || Node.isNonNullExpression(node)) {
+    return resolveRequestConstruction(node.getExpression(), context)
+  }
+
+  if (Node.isIdentifier(node)) {
+    const cacheKey = getIdentifierCacheKey(node)
+    if (context.visiting.has(cacheKey)) {
+      return null
+    }
+
+    const declaration = resolveConstDeclaration(node)
+    const initializer = declaration?.getInitializer()
+    if (!initializer) {
+      return null
+    }
+
+    context.visiting.add(cacheKey)
+    const resolved = resolveRequestConstruction(initializer, context)
+    context.visiting.delete(cacheKey)
+    return resolved
+  }
+
+  if (!Node.isNewExpression(node) || !isIdentifierName(node.getExpression(), 'Request')) {
+    return null
+  }
+
+  const [urlArg, initArg] = node.getArguments()
+  const url = urlArg ? resolveString(urlArg, context) : null
   if (!url) {
     return null
   }
