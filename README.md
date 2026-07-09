@@ -128,6 +128,8 @@ Dogfood run on `typejung.com`:
 
 That run surfaced a complete mock gap across auth, billing, and AI endpoints instead of a single missing handler.
 
+All file locations in the report are relative to the scanned directory (`--cwd`), using forward slashes on every platform, so reports are stable across machines and safe to store as CI baselines.
+
 ## Dogfooding
 
 I ran the analyzer against three real repositories:

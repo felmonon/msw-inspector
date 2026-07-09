@@ -59,6 +59,15 @@ describe('analyzeProject', () => {
       percentage: 66.7,
     })
     expect(report.unmockedCallIds).toHaveLength(1)
+    expect(report.handlers.map((handler) => handler.location.filePath)).toEqual([
+      'src/mocks/handlers.ts',
+      'src/mocks/handlers.ts',
+    ])
+    expect(report.apiCalls.map((call) => call.location.filePath)).toEqual([
+      'src/api/client.ts',
+      'src/api/client.ts',
+      'src/api/client.ts',
+    ])
     expect(report.matches).toEqual([
       { callId: report.apiCalls[0]?.id, handlerId: report.handlers[0]?.id },
       { callId: report.apiCalls[1]?.id, handlerId: report.handlers[1]?.id },

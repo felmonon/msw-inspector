@@ -81,11 +81,11 @@ export async function scanApiCalls(options: AnalyzerOptions): Promise<ApiCallSca
 
       const resolved = resolveApiCall(call, meta, context)
       if (!resolved) {
-        unsupported.push(buildUnsupported(call, `unable to statically resolve ${meta.source} URL`))
+        unsupported.push(buildUnsupported(cwd, call, `unable to statically resolve ${meta.source} URL`))
         continue
       }
 
-      const location = getLocation(sourceFile, call)
+      const location = getLocation(cwd, sourceFile, call)
       const pattern = createPathPattern(stripQueryAndHash(resolved.url), options.baseUrl)
 
       apiCalls.push({
@@ -753,9 +753,9 @@ function getIdentifierCacheKey(identifier: Identifier): string {
   return `${identifier.getSourceFile().getFilePath()}:${identifier.getText()}:${identifier.getStart()}`
 }
 
-function buildUnsupported(call: CallExpression, reason: string): UnsupportedPattern {
+function buildUnsupported(cwd: string, call: CallExpression, reason: string): UnsupportedPattern {
   const sourceFile = call.getSourceFile()
-  const location = getLocation(sourceFile, call)
+  const location = getLocation(cwd, sourceFile, call)
   return {
     kind: 'api-call',
     reason,
@@ -764,9 +764,9 @@ function buildUnsupported(call: CallExpression, reason: string): UnsupportedPatt
   }
 }
 
-function getLocation(sourceFile: SourceFile, node: import('ts-morph').Node) {
+function getLocation(cwd: string, sourceFile: SourceFile, node: import('ts-morph').Node) {
   const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
-  return normalizeLocation(sourceFile.getFilePath(), line, column)
+  return normalizeLocation(cwd, sourceFile.getFilePath(), line, column)
 }
 
 function compareRecords(left: ApiCallRecord, right: ApiCallRecord): number {
