@@ -131,6 +131,8 @@ That run surfaced a complete mock gap across auth, billing, and AI endpoints ins
 
 All file locations in the report are relative to the scanned directory (`--cwd`), using forward slashes on every platform, so reports are stable across machines and safe to store as CI baselines.
 
+The full report format is documented in [docs/report-schema.md](./docs/report-schema.md) and defined machine-readably in [schema/coverage-report.v1.json](./schema/coverage-report.v1.json), which ships with the npm package.
+
 ## Dogfooding
 
 I ran the analyzer against three real repositories:
