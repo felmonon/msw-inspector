@@ -4,7 +4,7 @@ All notable changes to this project should be documented here.
 
 ## Unreleased
 
-- Overrode transitive `esbuild` to `^0.28.1` to clear GHSA dev-server advisory (dev-only dependency).
+- Cleared all `npm audit` findings: upgraded `path-to-regexp` past a ReDoS advisory, upgraded `@actions/core`/`@actions/github` off vulnerable `undici` 5, and overrode transitive `esbuild` past its dev-server advisory.
 - Declared the real Node.js requirement: `>=20` (the `commander` runtime dependency already required it, so `>=18.18` was never accurate).
 - Fixed stale-handler false positives: every handler matching a call is now marked used, not just the first.
 - Text output now lists unmocked API calls and stale handlers with file and line; `--limit` controls how many.

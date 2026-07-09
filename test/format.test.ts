@@ -5,6 +5,11 @@ import { formatCoverageReport } from '../src/core/format'
 import { createPathPattern } from '../src/core/normalize'
 import type { ApiCallRecord, HandlerRecord } from '../src/core/types'
 
+// CI environments force terminal colors; assertions compare plain text.
+function stripAnsi(value: string): string {
+  return value.replace(/\u001B\[[0-9;]*m/g, '')
+}
+
 function handler(id: string, pattern: string, filePath = 'src/mocks/handlers.ts', line = 1): HandlerRecord {
   return {
     id,
@@ -32,7 +37,7 @@ describe('formatCoverageReport', () => {
       apiCalls: [call('c1', '/users/123')],
     })
 
-    const output = formatCoverageReport(report)
+    const output = stripAnsi(formatCoverageReport(report))
     expect(output).toContain('Coverage: 100% (1/1)')
     expect(output).not.toContain('Unmocked API calls:')
     expect(output).not.toContain('Stale handlers:')
@@ -44,7 +49,7 @@ describe('formatCoverageReport', () => {
       apiCalls: [call('c1', '/api/chat', 'src/chat.ts', 12)],
     })
 
-    const output = formatCoverageReport(report)
+    const output = stripAnsi(formatCoverageReport(report))
     expect(output).toContain('Unmocked API calls:')
     expect(output).toContain('POST /api/chat  src/chat.ts:12')
     expect(output).toContain('Stale handlers:')
@@ -57,7 +62,7 @@ describe('formatCoverageReport', () => {
       apiCalls: [call('c1', '/one'), call('c2', '/two'), call('c3', '/three')],
     })
 
-    const output = formatCoverageReport(report, { limit: 2 })
+    const output = stripAnsi(formatCoverageReport(report, { limit: 2 }))
     expect(output).toContain('POST /one')
     expect(output).toContain('POST /two')
     expect(output).not.toContain('POST /three')

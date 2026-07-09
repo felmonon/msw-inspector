@@ -6,6 +6,11 @@ import { describe, expect, it } from 'vitest'
 
 import { runCli } from '../src/cli-main'
 
+// CI environments force terminal colors; assertions compare plain text.
+function stripAnsi(value: string): string {
+  return value.replace(/\u001B\[[0-9;]*m/g, '')
+}
+
 interface CliRun {
   code: number
   stdout: string
@@ -25,7 +30,7 @@ async function run(args: string[]): Promise<CliRun> {
     },
   })
 
-  return { code, stdout, stderr }
+  return { code, stdout: stripAnsi(stdout), stderr: stripAnsi(stderr) }
 }
 
 async function createProject(): Promise<string> {
