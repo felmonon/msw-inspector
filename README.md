@@ -96,6 +96,7 @@ The JSON report written by `--report-file` includes:
     "totalHandlers": 23,
     "staleHandlers": 3,
     "unmockedCalls": 8,
+    "ambiguousCalls": 0,
     "percentage": 74.2
   }
 }
@@ -188,6 +189,7 @@ The action does not compute a baseline delta yet. It publishes the current repor
 - It does not resolve cross-file constants or imported axios instances.
 - It does not analyze GraphQL, WebSocket, or SSE handlers.
 - It reports dynamic or ambiguous patterns as unsupported instead of guessing.
+- Calls whose HTTP method cannot be resolved statically are reported as `ambiguousCalls` when their path matches a handler; they never count as mocked or unmocked, and `--fail-on-unmocked` ignores them.
 
 ## Local Development
 

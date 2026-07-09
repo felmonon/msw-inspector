@@ -99,6 +99,43 @@ describe('buildCoverageReport', () => {
     expect(report.staleHandlerIds).toEqual([])
   })
 
+  it('reports UNKNOWN-method calls with a path-matching handler as ambiguous, not unmocked', () => {
+    const report = buildCoverageReport({
+      handlers: [handler({ id: 'h1', method: 'GET', pattern: createPathPattern('/profile') })],
+      apiCalls: [call({ id: 'c1', method: 'UNKNOWN', pattern: createPathPattern('/profile') })],
+    })
+
+    expect(report.ambiguousCallIds).toEqual(['c1'])
+    expect(report.unmockedCallIds).toEqual([])
+    expect(report.summary.ambiguousCalls).toBe(1)
+    expect(report.summary.unmockedCalls).toBe(0)
+    expect(report.summary.mockedCalls).toBe(0)
+    // The handler likely serves this call, so it must not be flagged stale.
+    expect(report.usedHandlerIds).toEqual(['h1'])
+    expect(report.staleHandlerIds).toEqual([])
+  })
+
+  it('keeps UNKNOWN-method calls with no path match in the unmocked list', () => {
+    const report = buildCoverageReport({
+      handlers: [handler({ id: 'h1', pattern: createPathPattern('/orders') })],
+      apiCalls: [call({ id: 'c1', method: 'UNKNOWN', pattern: createPathPattern('/profile') })],
+    })
+
+    expect(report.ambiguousCallIds).toEqual([])
+    expect(report.unmockedCallIds).toEqual(['c1'])
+    expect(report.staleHandlerIds).toEqual(['h1'])
+  })
+
+  it('still counts UNKNOWN-method calls as mocked when an ALL handler matches', () => {
+    const report = buildCoverageReport({
+      handlers: [handler({ id: 'h1', method: 'ALL', pattern: createPathPattern('/profile') })],
+      apiCalls: [call({ id: 'c1', method: 'UNKNOWN', pattern: createPathPattern('/profile') })],
+    })
+
+    expect(report.summary.mockedCalls).toBe(1)
+    expect(report.ambiguousCallIds).toEqual([])
+  })
+
   it('matches wildcard handlers using MSW-style coercion', () => {
     const report = buildCoverageReport({
       handlers: [handler({ id: 'h1', pattern: createPathPattern('https://api.example.com/users/*') })],

@@ -137,6 +137,18 @@ function findMatches(call: ApiCallRecord, handlers: HandlerRecord[]): HandlerRec
   return handlers.filter((handler) => handlerMatches(call, handler))
 }
 
+function patternMatches(call: ApiCallRecord, handler: HandlerRecord): boolean {
+  if (handler.pattern.kind === 'path') {
+    return matchesPath(call, handler)
+  }
+
+  if (handler.pattern.kind === 'regexp') {
+    return matchesRegExp(call, handler)
+  }
+
+  return false
+}
+
 function percentage(numerator: number, denominator: number): number {
   if (denominator === 0) {
     return 100
@@ -171,7 +183,28 @@ export function buildCoverageReport(input: {
     }
   }
 
-  const unmockedCallIds = input.apiCalls.filter((call) => !mockedCallIds.has(call.id)).map((call) => call.id)
+  // A call whose method could not be resolved statically may still hit a
+  // handler on the same path. Report it as ambiguous instead of unmocked, and
+  // keep the path-matching handlers out of the stale list: deleting a handler
+  // that likely serves this call is worse than leaving the call unresolved.
+  const unmockedCallIds: string[] = []
+  const ambiguousCallIds: string[] = []
+  for (const call of input.apiCalls) {
+    if (mockedCallIds.has(call.id)) {
+      continue
+    }
+
+    const pathMatched = call.method === 'UNKNOWN' ? input.handlers.filter((handler) => patternMatches(call, handler)) : []
+    if (pathMatched.length > 0) {
+      ambiguousCallIds.push(call.id)
+      for (const handler of pathMatched) {
+        usedHandlerIds.add(handler.id)
+      }
+    } else {
+      unmockedCallIds.push(call.id)
+    }
+  }
+
   const staleHandlerIds = input.handlers.filter((handler) => !usedHandlerIds.has(handler.id)).map((handler) => handler.id)
 
   return {
@@ -183,6 +216,7 @@ export function buildCoverageReport(input: {
     usedHandlerIds: [...usedHandlerIds],
     staleHandlerIds,
     unmockedCallIds,
+    ambiguousCallIds,
     unsupported: input.unsupported ?? [],
     summary: {
       mockedCalls: mockedCallIds.size,
@@ -191,6 +225,7 @@ export function buildCoverageReport(input: {
       totalHandlers: input.handlers.length,
       staleHandlers: staleHandlerIds.length,
       unmockedCalls: unmockedCallIds.length,
+      ambiguousCalls: ambiguousCallIds.length,
       percentage: percentage(mockedCallIds.size, input.apiCalls.length),
     },
   }

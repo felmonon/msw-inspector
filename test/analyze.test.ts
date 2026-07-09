@@ -56,6 +56,7 @@ describe('analyzeProject', () => {
       totalHandlers: 2,
       staleHandlers: 0,
       unmockedCalls: 1,
+      ambiguousCalls: 0,
       percentage: 66.7,
     })
     expect(report.unmockedCallIds).toHaveLength(1)
@@ -119,6 +120,7 @@ describe('analyzeProject', () => {
       totalHandlers: 2,
       staleHandlers: 1,
       unmockedCalls: 0,
+      ambiguousCalls: 0,
       percentage: 100,
     })
     expect(report.matches).toEqual([

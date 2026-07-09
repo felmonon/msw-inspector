@@ -26,6 +26,12 @@ export function formatCoverageReport(report: CoverageReport, options: FormatOpti
     lines.push(...recordLines(unmocked, limit))
   }
 
+  const ambiguous = pickRecords(report.apiCalls, report.ambiguousCallIds ?? [])
+  if (ambiguous.length > 0) {
+    lines.push('', `Ambiguous API calls (method unknown, path matches a handler):`)
+    lines.push(...recordLines(ambiguous, limit))
+  }
+
   const stale = pickRecords(report.handlers, report.staleHandlerIds)
   if (stale.length > 0) {
     lines.push('', 'Stale handlers:')
