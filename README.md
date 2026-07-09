@@ -44,6 +44,16 @@ npx msw-inspector \
 
 The CLI prints a human-readable summary by default. Use `--format json` when you want the full report for CI or a downstream action.
 
+CI gate flags: `--min-coverage <pct>` fails below a coverage threshold, `--fail-on-unmocked` fails on any unmocked call, `--fail-on-stale` fails on any stale handler, and `--fail-on-empty` fails when the scan finds no handlers and no API calls (usually a sign of misconfigured globs or `--cwd`). An empty scan always prints a warning to stderr.
+
+### Exit codes
+
+| Code | Meaning |
+| ---: | --- |
+| 0 | Analysis ran; no enabled gate failed. |
+| 1 | A gate failed (`--min-coverage`, `--fail-on-unmocked`, `--fail-on-stale`, `--fail-on-empty`) or the analysis errored. |
+| 2 | Usage error: unknown flag or invalid value for `--format`, `--min-coverage`, or `--limit`. |
+
 If your app uses relative URLs but you want origin-aware matching, set `--base-url`. That resolves relative handlers and API calls against one canonical origin, which is useful when the same pathname exists on multiple backends.
 
 ## Output

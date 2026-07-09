@@ -38,8 +38,32 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
     .option('--min-coverage <percentage>', 'Fail if API mock coverage drops below this percentage.')
     .option('--fail-on-unmocked', 'Fail if any API call is unmocked.')
     .option('--fail-on-stale', 'Fail if any stale handler is found.')
+    .option('--fail-on-empty', 'Fail if no handlers and no API calls are found.')
     .option('--cwd <cwd>', 'Working directory to inspect.', process.cwd())
     .action(async (options) => {
+      if (options.format !== 'text' && options.format !== 'json') {
+        io.stderr(`Invalid --format value: ${options.format}. Expected "text" or "json".\n`)
+        exitCode = 2
+        return
+      }
+
+      let minCoverage: number | null = null
+      if (options.minCoverage !== undefined) {
+        minCoverage = Number(options.minCoverage)
+        if (!Number.isFinite(minCoverage) || minCoverage < 0 || minCoverage > 100) {
+          io.stderr(`Invalid --min-coverage value: ${options.minCoverage}. Expected a number between 0 and 100.\n`)
+          exitCode = 2
+          return
+        }
+      }
+
+      const limit = Number(options.limit)
+      if (!Number.isInteger(limit) || limit < 0) {
+        io.stderr(`Invalid --limit value: ${options.limit}. Expected a non-negative integer.\n`)
+        exitCode = 2
+        return
+      }
+
       const report = await analyzeProject({
         cwd: options.cwd,
         baseUrl: options.baseUrl,
@@ -58,14 +82,19 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
       if (options.format === 'json') {
         io.stdout(`${json}\n`)
       } else {
-        io.stdout(`${formatCoverageReport(report, { limit: Number(options.limit) })}\n`)
+        io.stdout(`${formatCoverageReport(report, { limit })}\n`)
       }
 
-      const minCoverage = options.minCoverage ? Number(options.minCoverage) : null
+      const isEmptyScan = report.summary.totalHandlers === 0 && report.summary.totalCalls === 0
+      if (isEmptyScan) {
+        io.stderr('Warning: no MSW handlers or API calls were found. Check --cwd, --handlers, and --sources globs.\n')
+      }
+
       const shouldFail =
-        (typeof minCoverage === 'number' && Number.isFinite(minCoverage) && report.summary.percentage < minCoverage) ||
+        (minCoverage !== null && report.summary.percentage < minCoverage) ||
         (options.failOnUnmocked && report.summary.unmockedCalls > 0) ||
-        (options.failOnStale && report.summary.staleHandlers > 0)
+        (options.failOnStale && report.summary.staleHandlers > 0) ||
+        (options.failOnEmpty && isEmptyScan)
 
       if (shouldFail) {
         exitCode = 1
@@ -82,7 +111,8 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
     await program.parseAsync(argv)
   } catch (error) {
     if (error instanceof CommanderError) {
-      return error.exitCode
+      // Help and version requests exit 0; anything else is a usage error.
+      return error.exitCode === 0 ? 0 : 2
     }
 
     const message = error instanceof Error ? error.message : String(error)

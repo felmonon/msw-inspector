@@ -125,4 +125,44 @@ describe('runCli', () => {
 
     expect(result.code).toBe(1)
   })
+
+  it('exits 2 on an invalid --format value', async () => {
+    const cwd = await createProject()
+    const result = await run(['--cwd', cwd, '--format', 'banana'])
+
+    expect(result.code).toBe(2)
+    expect(result.stderr).toContain('Invalid --format value: banana')
+    expect(result.stdout).toBe('')
+  })
+
+  it('exits 2 on a non-numeric --min-coverage value', async () => {
+    const cwd = await createProject()
+    const result = await run(['--cwd', cwd, '--min-coverage', 'abc'])
+
+    expect(result.code).toBe(2)
+    expect(result.stderr).toContain('Invalid --min-coverage value: abc')
+  })
+
+  it('exits 2 on an unknown option', async () => {
+    const result = await run(['--nope'])
+
+    expect(result.code).toBe(2)
+    expect(result.stderr).toContain('unknown option')
+  })
+
+  it('warns on an empty scan but still exits 0 by default', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'msw-inspector-empty-'))
+    const result = await run(['--cwd', cwd])
+
+    expect(result.code).toBe(0)
+    expect(result.stderr).toContain('no MSW handlers or API calls were found')
+    expect(result.stdout).toContain('Coverage: 100% (0/0)')
+  })
+
+  it('exits 1 on an empty scan with --fail-on-empty', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'msw-inspector-empty-'))
+    const result = await run(['--cwd', cwd, '--fail-on-empty'])
+
+    expect(result.code).toBe(1)
+  })
 })
