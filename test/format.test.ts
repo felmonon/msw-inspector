@@ -104,6 +104,37 @@ describe('formatCoverageReport', () => {
     expect(output).toContain('… and 1 more')
   })
 
+  it('ends with a red verdict line when calls are unmocked', () => {
+    const report = buildCoverageReport({
+      handlers: [],
+      apiCalls: [call('c1', '/missing')],
+    })
+
+    const output = stripAnsi(formatCoverageReport(report))
+    expect(output.trimEnd().split('\n').at(-1)).toBe('\u2717 0% mock coverage \u2014 1 unmocked call')
+  })
+
+  it('ends with a green verdict line when everything is mocked', () => {
+    const report = buildCoverageReport({
+      handlers: [{ ...handler('h1', '/users/:id'), method: 'POST' }],
+      apiCalls: [call('c1', '/users/123')],
+    })
+
+    const output = stripAnsi(formatCoverageReport(report))
+    expect(output.trimEnd().split('\n').at(-1)).toBe('\u2713 100% mock coverage \u2014 all 1 call mocked')
+  })
+
+  it('ends with a review verdict when only ambiguous calls remain', () => {
+    const report = buildCoverageReport({
+      handlers: [handler('h1', '/profile')],
+      apiCalls: [{ ...call('c1', '/profile'), method: 'UNKNOWN' as const }],
+    })
+
+    const output = stripAnsi(formatCoverageReport(report))
+    expect(output).toContain('\u25CC 1 ambiguous calls')
+    expect(output.trimEnd().split('\n').at(-1)).toBe('\u25CC 0% mock coverage \u2014 1 ambiguous call to review')
+  })
+
   it('omits the unsupported section when there are no unsupported patterns', () => {
     const output = stripAnsi(formatCoverageReport(baseReport()))
     expect(output).not.toContain('unsupported patterns skipped')

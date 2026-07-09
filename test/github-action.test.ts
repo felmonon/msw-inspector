@@ -83,20 +83,42 @@ const report = {
 } satisfies CoverageReport
 
 describe('github action formatting', () => {
-  it('renders a job summary table', () => {
+  it('renders a job summary with verdict, bar, and footer', () => {
     const markdown = renderJobSummary(report)
-    expect(markdown).toContain('## MSW mock coverage')
-    expect(markdown).toContain('| Coverage | 50% |')
-    expect(markdown).toContain('| Unmocked API calls | 1 |')
+    expect(markdown).toContain('## \u{1F534} MSW mock coverage: 50% (1/2)')
+    expect(markdown).toContain('`\u25B0\u25B0\u25B0\u25B0\u25B0\u25B1\u25B1\u25B1\u25B1\u25B1` 50%')
+    expect(markdown).toContain('| Unmocked | Ambiguous | Stale handlers | Handlers used |')
+    expect(markdown).toContain('| 1 | 0 | 1 | 1/2 |')
+    expect(markdown).toContain('[msw-inspector](https://github.com/felmonon/msw-inspector)')
   })
 
-  it('renders a sticky comment with marker and top items', () => {
+  it('renders a sticky comment with marker, collapsible sections, and footer', () => {
     const markdown = renderStickyComment(report, 'Coverage report', 5)
     expect(markdown).toContain('<!-- msw-inspector-comment -->')
-    expect(markdown).toContain('## Coverage report')
-    expect(markdown).toContain('### Unmocked API calls')
-    expect(markdown).toContain('- POST /payments')
-    expect(markdown).toContain('### Stale handlers')
-    expect(markdown).toContain('- POST /checkout')
+    expect(markdown).toContain('## \u{1F534} Coverage report: 50% (1/2)')
+    expect(markdown).toContain('<summary>Unmocked API calls (1)</summary>')
+    expect(markdown).toContain('- `POST /payments` \u2014 src/api/payments.ts:7')
+    expect(markdown).toContain('<summary>Stale handlers (1)</summary>')
+    expect(markdown).toContain('- `POST /checkout` \u2014 src/mocks/checkout.ts:2')
+    expect(markdown).toContain('[report an issue](https://github.com/felmonon/msw-inspector/issues)')
+  })
+
+  it('uses a green verdict and omits empty sections when everything is covered', () => {
+    const covered = {
+      ...report,
+      staleHandlerIds: [],
+      unmockedCallIds: [],
+      mockedCallIds: ['call-1', 'call-2'],
+      usedHandlerIds: ['handler-1', 'handler-2'],
+      summary: { ...report.summary, mockedCalls: 2, unmockedCalls: 0, staleHandlers: 0, usedHandlers: 2, percentage: 100 },
+    }
+    const markdown = renderStickyComment(covered)
+    expect(markdown).toContain('## \u{1F7E2} MSW mock coverage: 100% (2/2)')
+    expect(markdown).not.toContain('<details>')
+  })
+
+  it('collapses overflow into a remainder line', () => {
+    const markdown = renderStickyComment(report, 'Coverage report', 0)
+    expect(markdown).not.toContain('<details>')
   })
 })
