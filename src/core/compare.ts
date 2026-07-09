@@ -117,22 +117,24 @@ function methodsMatch(call: ApiCallRecord, handler: HandlerRecord): boolean {
   return handler.method === 'ALL' || call.method === handler.method
 }
 
-function findMatch(call: ApiCallRecord, handlers: HandlerRecord[]): HandlerRecord | undefined {
-  return handlers.find((handler) => {
-    if (!methodsMatch(call, handler)) {
-      return false
-    }
-
-    if (handler.pattern.kind === 'path') {
-      return matchesPath(call, handler)
-    }
-
-    if (handler.pattern.kind === 'regexp') {
-      return matchesRegExp(call, handler)
-    }
-
+function handlerMatches(call: ApiCallRecord, handler: HandlerRecord): boolean {
+  if (!methodsMatch(call, handler)) {
     return false
-  })
+  }
+
+  if (handler.pattern.kind === 'path') {
+    return matchesPath(call, handler)
+  }
+
+  if (handler.pattern.kind === 'regexp') {
+    return matchesRegExp(call, handler)
+  }
+
+  return false
+}
+
+function findMatches(call: ApiCallRecord, handlers: HandlerRecord[]): HandlerRecord[] {
+  return handlers.filter((handler) => handlerMatches(call, handler))
 }
 
 function percentage(numerator: number, denominator: number): number {
@@ -153,17 +155,20 @@ export function buildCoverageReport(input: {
   const usedHandlerIds = new Set<string>()
 
   for (const call of input.apiCalls) {
-    const handler = findMatch(call, input.handlers)
-    if (!handler) {
+    const matched = findMatches(call, input.handlers)
+    const [primary] = matched
+    if (!primary) {
       continue
     }
 
     matches.push({
       callId: call.id,
-      handlerId: handler.id,
+      handlerId: primary.id,
     })
     mockedCallIds.add(call.id)
-    usedHandlerIds.add(handler.id)
+    for (const handler of matched) {
+      usedHandlerIds.add(handler.id)
+    }
   }
 
   const unmockedCallIds = input.apiCalls.filter((call) => !mockedCallIds.has(call.id)).map((call) => call.id)

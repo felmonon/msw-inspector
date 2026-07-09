@@ -69,6 +69,36 @@ describe('buildCoverageReport', () => {
     expect(report.summary.mockedCalls).toBe(1)
   })
 
+  it('marks every handler matching a call as used, not just the first', () => {
+    const report = buildCoverageReport({
+      handlers: [
+        handler({ id: 'h1', pattern: createPathPattern('/users/:id') }),
+        handler({ id: 'h2', pattern: createPathPattern('/users/:id') }),
+      ],
+      apiCalls: [call({ id: 'c1' })],
+    })
+
+    expect(report.matches).toEqual([{ callId: 'c1', handlerId: 'h1' }])
+    expect(report.usedHandlerIds).toEqual(['h1', 'h2'])
+    expect(report.staleHandlerIds).toEqual([])
+    expect(report.summary.usedHandlers).toBe(2)
+    expect(report.summary.staleHandlers).toBe(0)
+  })
+
+  it('does not flag a broad wildcard handler as stale when a specific handler also matches', () => {
+    const report = buildCoverageReport({
+      handlers: [
+        handler({ id: 'specific', pattern: createPathPattern('/users/:id') }),
+        handler({ id: 'wildcard', pattern: createPathPattern('/users/*') }),
+      ],
+      apiCalls: [call({ id: 'c1' })],
+    })
+
+    expect(report.matches).toEqual([{ callId: 'c1', handlerId: 'specific' }])
+    expect(report.usedHandlerIds).toEqual(['specific', 'wildcard'])
+    expect(report.staleHandlerIds).toEqual([])
+  })
+
   it('matches wildcard handlers using MSW-style coercion', () => {
     const report = buildCoverageReport({
       handlers: [handler({ id: 'h1', pattern: createPathPattern('https://api.example.com/users/*') })],
