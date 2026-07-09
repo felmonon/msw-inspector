@@ -42,6 +42,8 @@ Install the package:
 npm install -D msw-inspector-cli
 ```
 
+The package is `msw-inspector-cli`; the installed binary you run is `msw-inspector`.
+
 Then run the binary from your project root:
 
 ```bash

@@ -27,7 +27,7 @@ Mock coverage usually decays quietly:
 npm install -D msw-inspector-cli
 ```
 
-The npm package is published as `msw-inspector-cli` because the original `msw-inspector` name is already taken on the registry. The installed binary remains `msw-inspector`.
+The npm package is published as `msw-inspector-cli` because `msw-inspector` is already an active npm package in the MSW ecosystem for runtime request inspection. This project is a static coverage analyzer, and the installed binary remains `msw-inspector`.
 
 ## Quick start
 
