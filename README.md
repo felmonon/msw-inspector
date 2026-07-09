@@ -153,7 +153,9 @@ The first release is intentionally narrow:
 
 ## GitHub Action
 
-The CLI ships with a matching GitHub Action wrapper in a separate repository: [`felmonon/msw-inspector-action`](https://github.com/felmonon/msw-inspector-action). It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
+The canonical GitHub Action is [`felmonon/msw-inspector-action`](https://github.com/felmonon/msw-inspector-action). It reads the JSON report that the CLI already produced, writes a job summary, and can optionally upsert one sticky PR comment.
+
+The action's source lives in this repository under `src/github-action/`; its built bundle is vendored into the action repository at release time. This repository intentionally does not ship its own `action.yml` — always use `felmonon/msw-inspector-action` in workflows.
 
 Marketplace listing: [`MSW Inspector`](https://github.com/marketplace/actions/msw-inspector)
 
