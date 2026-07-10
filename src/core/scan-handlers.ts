@@ -5,14 +5,14 @@ import { Node, Project, SyntaxKind, VariableDeclarationKind, type Identifier, ty
 
 import { DEFAULT_EXCLUDE_GLOBS, DEFAULT_HANDLER_GLOBS } from './defaults'
 import { createPathPattern, createRegExpPattern, createRecordId, normalizeLocation, normalizeMethod } from './normalize'
-import type { AnalyzerOptions, HandlerRecord, HttpMethod, UnsupportedPattern } from './types'
+import type { AnalyzerOptions, GraphqlOperation, HandlerRecord, HttpMethod, RoutePattern, UnsupportedPattern } from './types'
 
 export interface HandlerScanResult {
   handlers: HandlerRecord[]
   unsupported: UnsupportedPattern[]
 }
 
-type MswApi = 'http' | 'rest'
+type MswApi = 'http' | 'rest' | 'graphql'
 
 interface ImportBindings {
   direct: Map<string, MswApi>
@@ -26,6 +26,7 @@ interface StaticContext {
 }
 
 const HANDLER_VERBS = new Set(['all', 'get', 'post', 'put', 'patch', 'delete', 'head', 'options'])
+const GRAPHQL_OPERATIONS = new Set(['query', 'mutation', 'operation'])
 
 export async function scanHandlers(options: AnalyzerOptions): Promise<HandlerScanResult> {
   const cwd = options.cwd
@@ -68,12 +69,27 @@ export async function scanHandlers(options: AnalyzerOptions): Promise<HandlerSca
       }
 
       const arg = call.getArguments()[0]
+      if (handlerMeta.kind === 'graphql' && handlerMeta.method === 'OPERATION') {
+        const location = getLocation(cwd, sourceFile, call)
+        const pattern = createGraphqlPattern('*')
+        handlers.push({
+          id: createRecordId([location.filePath, String(location.line), String(location.column), handlerMeta.source, handlerMeta.method, pattern.normalized]),
+          method: handlerMeta.method,
+          kind: handlerMeta.kind,
+          pattern,
+          location,
+          source: handlerMeta.source,
+        })
+        continue
+      }
       if (!arg) {
         unsupported.push(buildUnsupported(cwd, call, 'handler', 'handler call is missing a matcher argument'))
         continue
       }
 
-      const resolved = resolveHandlerMatcher(arg, context)
+      const resolved = handlerMeta.kind === 'graphql'
+        ? resolveStaticString(arg, context)
+        : resolveHandlerMatcher(arg, context)
       if (!resolved) {
         unsupported.push(buildUnsupported(cwd, call, 'handler', describeUnsupportedMatcher(arg, context)))
         continue
@@ -81,9 +97,10 @@ export async function scanHandlers(options: AnalyzerOptions): Promise<HandlerSca
 
       const location = getLocation(cwd, sourceFile, call)
       handlers.push({
-        id: createRecordId([location.filePath, String(location.line), String(location.column), handlerMeta.source, handlerMeta.method, resolved.normalized]),
+        id: createRecordId([location.filePath, String(location.line), String(location.column), handlerMeta.source, handlerMeta.method, typeof resolved === 'string' ? resolved : resolved.normalized]),
         method: handlerMeta.method,
-        pattern: resolved,
+        kind: handlerMeta.kind,
+        pattern: typeof resolved === 'string' ? createGraphqlPattern(resolved) : resolved,
         location,
         source: handlerMeta.source,
       })
@@ -111,7 +128,7 @@ function collectImportBindings(sourceFile: SourceFile): ImportBindings {
     for (const namedImport of declaration.getNamedImports()) {
       const imported = namedImport.getName()
       const local = namedImport.getAliasNode()?.getText() ?? imported
-      if (imported === 'http' || imported === 'rest') {
+      if (imported === 'http' || imported === 'rest' || imported === 'graphql') {
         direct.set(local, imported)
       }
     }
@@ -128,17 +145,13 @@ function collectImportBindings(sourceFile: SourceFile): ImportBindings {
 function identifyHandlerCall(
   call: import('ts-morph').CallExpression,
   bindings: ImportBindings,
-): { method: HttpMethod; source: 'msw-http' | 'msw-rest' } | null {
+): { method: HttpMethod | GraphqlOperation; kind: 'http' | 'graphql'; source: 'msw-http' | 'msw-rest' | 'msw-graphql' } | null {
   const expression = call.getExpression()
   if (!Node.isPropertyAccessExpression(expression)) {
     return null
   }
 
   const verb = expression.getName()
-  if (!HANDLER_VERBS.has(verb)) {
-    return null
-  }
-
   const root = expression.getExpression()
   if (Node.isIdentifier(root)) {
     const api = resolveMswApiBinding(root, bindings)
@@ -146,10 +159,7 @@ function identifyHandlerCall(
       return null
     }
 
-    return {
-      method: normalizeMethod(verb),
-      source: api === 'http' ? 'msw-http' : 'msw-rest',
-    }
+    return handlerMetadata(api, verb)
   }
 
   if (Node.isPropertyAccessExpression(root)) {
@@ -159,17 +169,27 @@ function identifyHandlerCall(
     }
 
     const api = root.getName()
-    if (api !== 'http' && api !== 'rest') {
+    if (api !== 'http' && api !== 'rest' && api !== 'graphql') {
       return null
     }
 
-    return {
-      method: normalizeMethod(verb),
-      source: api === 'http' ? 'msw-http' : 'msw-rest',
-    }
+    return handlerMetadata(api, verb)
   }
 
   return null
+}
+
+function handlerMetadata(api: MswApi, verb: string): { method: HttpMethod | GraphqlOperation; kind: 'http' | 'graphql'; source: 'msw-http' | 'msw-rest' | 'msw-graphql' } | null {
+  if (api === 'graphql') {
+    if (!GRAPHQL_OPERATIONS.has(verb)) return null
+    return { method: verb.toUpperCase() as GraphqlOperation, kind: 'graphql', source: 'msw-graphql' }
+  }
+  if (!HANDLER_VERBS.has(verb)) return null
+  return { method: normalizeMethod(verb), kind: 'http', source: api === 'http' ? 'msw-http' : 'msw-rest' }
+}
+
+function createGraphqlPattern(operationName: string): RoutePattern {
+  return { raw: operationName, kind: 'unknown', normalized: operationName, pathname: null, origin: null }
 }
 
 function resolveMswApiBinding(identifier: Identifier, bindings: ImportBindings): MswApi | null {
@@ -184,7 +204,7 @@ function resolveMswApiBinding(identifier: Identifier, bindings: ImportBindings):
     }
 
     const imported = declaration.getName()
-    if (imported === 'http' || imported === 'rest') {
+    if (imported === 'http' || imported === 'rest' || imported === 'graphql') {
       return imported
     }
   }

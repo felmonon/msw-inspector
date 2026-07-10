@@ -118,6 +118,9 @@ function methodsMatch(call: ApiCallRecord, handler: HandlerRecord): boolean {
 }
 
 function handlerMatches(call: ApiCallRecord, handler: HandlerRecord): boolean {
+  if (handler.kind === 'graphql') {
+    return false
+  }
   if (!methodsMatch(call, handler)) {
     return false
   }
@@ -138,6 +141,9 @@ function findMatches(call: ApiCallRecord, handlers: HandlerRecord[]): HandlerRec
 }
 
 function patternMatches(call: ApiCallRecord, handler: HandlerRecord): boolean {
+  if (handler.kind === 'graphql') {
+    return false
+  }
   if (handler.pattern.kind === 'path') {
     return matchesPath(call, handler)
   }

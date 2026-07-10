@@ -81,10 +81,11 @@
       "required": ["id", "method", "pattern", "location", "source"],
       "properties": {
         "id": { "type": "string" },
-        "method": { "$ref": "#/definitions/httpMethod" },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "ALL", "UNKNOWN", "QUERY", "MUTATION", "OPERATION"] },
+        "kind": { "enum": ["http", "graphql"] },
         "pattern": { "$ref": "#/definitions/routePattern" },
         "location": { "$ref": "#/definitions/sourceLocation" },
-        "source": { "enum": ["msw-http", "msw-rest"] }
+        "source": { "enum": ["msw-http", "msw-rest", "msw-graphql"] }
       }
     },
     "apiCallRecord": {
