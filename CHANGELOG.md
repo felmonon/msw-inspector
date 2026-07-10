@@ -2,6 +2,14 @@
 
 All notable changes to this project should be documented here.
 
+## v0.3.1
+
+- Corrected static MSW handler resolution for direct and const-backed `new URL(...).href` values, including absolute URLs without a base.
+- Preserved JavaScript `new RegExp(pattern, flags)` semantics when matching static handler patterns.
+- Made MSW import bindings and same-file matcher constants scope-aware, so shadowed aliases and values are not mistaken for real handlers.
+- Made `--limit` consistently cap unsupported-pattern output as well as the other detailed text sections.
+- Clarified the published package name (`msw-inspector-cli`) and installed binary (`msw-inspector`).
+
 ## v0.2.0
 
 - Cleared all `npm audit` findings: upgraded `path-to-regexp` past a ReDoS advisory, upgraded `@actions/core`/`@actions/github` off vulnerable `undici` 5, and overrode transitive `esbuild` past its dev-server advisory.
