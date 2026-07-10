@@ -39,10 +39,10 @@ Update `CHANGELOG.md` before publishing.
 
 1. Confirm `npm run check` and `npm run build` pass.
 2. Update `CHANGELOG.md`.
-3. Bump `package.json` with `npm version patch`, `npm version minor`, or `npm version major`.
-4. Push the commit and tag.
-5. Publish to npm with `npm publish`.
-6. Create a GitHub release from the tag with the changelog notes.
+3. On a release branch, run `npm version patch --no-git-tag-version` (or the appropriate minor/major bump), then open and merge the release PR.
+4. Create and push an annotated tag for the exact merged `main` commit.
+5. Create and publish a GitHub release from that tag with the changelog notes. The release-triggered publish workflow runs the checks, builds the package, and publishes to npm.
+6. Verify the published npm version and `latest` dist-tag. Do not run `npm publish` locally as part of this workflow.
 7. If `src/github-action/` changed, refresh the action repository: run `npm run build:action`, copy `dist/action/index.js` to `dist/index.js` in `felmonon/msw-inspector-action` (the self-contained bundle `action.yml` points at), commit there, and move the `v1` tag to the new release.
 8. Open or update a follow-up roadmap issue for the next release.
 

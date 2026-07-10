@@ -33,7 +33,7 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
     .option('--exclude <globs...>', 'Exclude file globs.', DEFAULT_EXCLUDE_GLOBS)
     .option('--base-url <url>', 'Resolve relative handlers and calls against this base URL.')
     .option('--format <format>', 'Output format: text or json.', 'text')
-    .option('--limit <count>', 'Maximum unmocked/stale entries listed in text output.', String(DEFAULT_FORMAT_LIMIT))
+    .option('--limit <count>', 'Maximum entries listed in each text-output detail section.', String(DEFAULT_FORMAT_LIMIT))
     .option('--report-file <path>', 'Write the JSON report to a file.')
     .option('--min-coverage <percentage>', 'Fail if API mock coverage drops below this percentage.')
     .option('--fail-on-unmocked', 'Fail if any API call is unmocked.')
