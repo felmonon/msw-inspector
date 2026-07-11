@@ -34,6 +34,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test",
+    "prepare": "patch-package",
     "prepack": "npm run build"
   },
   "keywords": [
@@ -57,7 +58,8 @@
     "@types/node": "^26.1.0",
     "ajv": "^8.20.0",
     "esbuild": "^0.28.1",
-    "tsup": "^8.5.0",
+    "patch-package": "^8.0.1",
+    "tsup": "8.5.1",
     "typescript": "^6.0.3",
     "vitest": "^4.0.18"
   },
