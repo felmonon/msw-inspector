@@ -22,6 +22,7 @@ interface AxiosTarget {
 
 interface StaticContext {
   sourceFile: SourceFile
+  wrapperNames: Set<string>
   stringCache: Map<string, string | null>
   objectCache: Map<string, ObjectLiteralExpression | null>
   axiosTargetCache: Map<string, AxiosTarget | null>
@@ -33,14 +34,22 @@ type ApiCallMeta =
   | { kind: 'axios-call'; source: 'axios'; target: AxiosTarget }
   | { kind: 'axios-verb'; source: 'axios'; target: AxiosTarget; method: HttpMethod }
   | { kind: 'axios-request'; source: 'axios'; target: AxiosTarget }
+  | { kind: 'wrapper'; source: 'wrapper'; method: HttpMethod }
 
 const AXIOS_HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options'])
+const WRAPPER_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const
 const FETCH_ROOTS = new Set(['window', 'globalThis', 'self', 'global'])
 
 export async function scanApiCalls(options: AnalyzerOptions): Promise<ApiCallScanResult> {
   const cwd = options.cwd
   const sourceGlobs = options.sourceGlobs?.length ? options.sourceGlobs : DEFAULT_SOURCE_GLOBS
   const excludeGlobs = options.excludeGlobs?.length ? options.excludeGlobs : DEFAULT_EXCLUDE_GLOBS
+  const configuredWrapperNames = new Set(
+    (options.wrapperNames ?? [])
+      .flatMap((name) => name.split(','))
+      .map((name) => name.trim())
+      .filter(Boolean),
+  )
 
   const files = await fg(sourceGlobs, {
     cwd,
@@ -67,6 +76,7 @@ export async function scanApiCalls(options: AnalyzerOptions): Promise<ApiCallSca
     const bindings = collectImportBindings(sourceFile)
     const context: StaticContext = {
       sourceFile,
+      wrapperNames: configuredWrapperNames,
       stringCache: new Map(),
       objectCache: new Map(),
       axiosTargetCache: new Map(),
@@ -172,6 +182,14 @@ function identifyApiCall(call: CallExpression, bindings: ImportBindings, context
         target,
       }
     }
+
+    if (isSameFileWrapperIdentifier(expression, context.wrapperNames)) {
+      return {
+        kind: 'wrapper',
+        source: 'wrapper',
+        method: inferWrapperMethod(expression.getText()),
+      }
+    }
   }
 
   if (!Node.isPropertyAccessExpression(expression)) {
@@ -209,6 +227,11 @@ function resolveApiCall(
   meta: ApiCallMeta,
   context: StaticContext,
 ): { url: string; method: HttpMethod } | null {
+  if (meta.kind === 'wrapper') {
+    const url = resolveString(call.getArguments()[0], context)
+    return url ? { url, method: meta.method } : null
+  }
+
   if (meta.kind === 'fetch') {
     return resolveFetchCall(call, context)
   }
@@ -222,6 +245,18 @@ function resolveApiCall(
   }
 
   return resolveAxiosDirectCall(call, meta.target, context)
+}
+
+function inferWrapperMethod(name: string): HttpMethod {
+  for (const method of WRAPPER_HTTP_METHODS) {
+    const lower = method.toLowerCase()
+    const title = `${lower[0]?.toUpperCase()}${lower.slice(1)}`
+    if (name === lower || name.endsWith(method) || name.endsWith(title) || name.toLowerCase().endsWith(`_${lower}`)) {
+      return method
+    }
+  }
+
+  return 'UNKNOWN'
 }
 
 function resolveFetchCall(call: CallExpression, context: StaticContext): { url: string; method: HttpMethod } | null {
@@ -703,6 +738,25 @@ function isGlobalFetchIdentifier(identifier: Identifier): boolean {
   }
 
   return !symbol.getDeclarations().some((declaration) => declaration.getSourceFile().getFilePath() === identifier.getSourceFile().getFilePath())
+}
+
+function isSameFileWrapperIdentifier(identifier: Identifier, configuredNames: Set<string>): boolean {
+  if (!configuredNames.has(identifier.getText())) {
+    return false
+  }
+
+  const symbol = identifier.getSymbol()
+  if (!symbol) {
+    return false
+  }
+
+  return symbol.getDeclarations().some((declaration) => {
+    if (declaration.getSourceFile().getFilePath() !== identifier.getSourceFile().getFilePath()) {
+      return false
+    }
+
+    return Node.isFunctionDeclaration(declaration) || Node.isVariableDeclaration(declaration)
+  })
 }
 
 function isAxiosBindingIdentifier(identifier: Identifier, bindings: ImportBindings): boolean {

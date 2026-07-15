@@ -38,7 +38,7 @@ export interface ApiCallRecord {
   method: HttpMethod
   pattern: RoutePattern
   location: SourceLocation
-  source: 'fetch' | 'axios'
+  source: 'fetch' | 'axios' | 'wrapper'
 }
 
 export interface UnsupportedPattern {
@@ -84,4 +84,5 @@ export interface AnalyzerOptions {
   handlerGlobs?: string[]
   sourceGlobs?: string[]
   excludeGlobs?: string[]
+  wrapperNames?: string[]
 }
