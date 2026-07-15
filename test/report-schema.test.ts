@@ -39,10 +39,13 @@ describe('coverage report schema', () => {
     await writeFile(
       path.join(apiDir, 'client.ts'),
       `
+        function apiGet(url: string) { return url }
+
         export async function run(init: RequestInit) {
           await fetch('/users/123')
           await fetch('/missing')
           await fetch('/profile', init)
+          apiGet('/users/456')
         }
       `,
       'utf8',
@@ -52,12 +55,14 @@ describe('coverage report schema', () => {
       cwd,
       handlerGlobs: ['src/mocks/**/*.ts'],
       sourceGlobs: ['src/api/**/*.ts'],
+      wrapperNames: ['apiGet'],
     })
 
     expect(report.summary.unmockedCalls).toBeGreaterThan(0)
     expect(report.summary.ambiguousCalls).toBeGreaterThan(0)
     expect(report.summary.staleHandlers).toBeGreaterThan(0)
     expect(report.unsupported.length).toBeGreaterThan(0)
+    expect(report.apiCalls.some((call) => call.source === 'wrapper')).toBe(true)
 
     const schemaPath = path.join(process.cwd(), 'schema', 'coverage-report.v1.json')
     const schema = JSON.parse(await readFile(schemaPath, 'utf8'))

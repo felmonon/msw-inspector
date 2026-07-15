@@ -96,7 +96,7 @@
         "method": { "$ref": "#/definitions/httpMethod" },
         "pattern": { "$ref": "#/definitions/routePattern" },
         "location": { "$ref": "#/definitions/sourceLocation" },
-        "source": { "enum": ["fetch", "axios"] }
+        "source": { "enum": ["fetch", "axios", "wrapper"] }
       }
     },
     "coverageMatch": {

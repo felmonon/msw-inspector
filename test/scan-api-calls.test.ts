@@ -148,6 +148,24 @@ describe('scanApiCalls', () => {
     ])
   })
 
+  it('detects configured same-file wrappers and reports dynamic arguments as unsupported', async () => {
+    const result = await scanApiCalls({
+      cwd: fixturesDir,
+      sourceGlobs: ['src/wrappers.ts'],
+      wrapperNames: ['apiGet', 'apiPost', 'apiRequest', 'apiPut', 'apiDelete', 'importedGet'],
+    })
+
+    expect(result.apiCalls.map((call) => [call.source, call.method, call.pattern.normalized])).toEqual([
+      ['wrapper', 'GET', '/users'],
+      ['wrapper', 'POST', '/orders'],
+      ['wrapper', 'UNKNOWN', '/health'],
+      ['wrapper', 'PUT', '/settings'],
+    ])
+    expect(result.unsupported.map((item) => [item.reason, item.expressionText])).toEqual([
+      ['unable to statically resolve wrapper URL', 'apiDelete(dynamicPath)'],
+    ])
+  })
+
   it('resolves relative API calls against a configured baseUrl', async () => {
     const cwd = await mkdtemp(path.join(os.tmpdir(), 'msw-inspector-api-'))
     const sourceDir = path.join(cwd, 'src')

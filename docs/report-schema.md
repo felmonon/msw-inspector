@@ -14,7 +14,7 @@ The JSON report written by `--report-file` (and printed by `--format json`) is a
 | --- | --- | --- |
 | `schemaVersion` | `1` | Report format version. |
 | `handlers` | `HandlerRecord[]` | Every statically resolved MSW handler, sorted by file, line, column. |
-| `apiCalls` | `ApiCallRecord[]` | Every statically resolved `fetch`/`axios` call, sorted by file, line, column. |
+| `apiCalls` | `ApiCallRecord[]` | Every statically resolved `fetch`/`axios`/configured wrapper call, sorted by file, line, column. |
 | `matches` | `{callId, handlerId}[]` | One entry per mocked call, pointing at the first handler that matched it. |
 | `mockedCallIds` | `string[]` | Calls covered by at least one handler. |
 | `usedHandlerIds` | `string[]` | Handlers matched by at least one call, including every handler that matches a mocked call and handlers whose path matches an ambiguous call. |
@@ -40,7 +40,7 @@ Every call is in exactly one of `mockedCallIds`, `unmockedCallIds`, or `ambiguou
 | `pattern.pathname` | `string \| null` | Pathname component when `kind` is `path`. |
 | `pattern.origin` | `string \| null` | Origin when the pattern is absolute or resolved via `--base-url`. |
 | `location` | `{filePath, line, column}` | 1-based position. `filePath` is relative to `--cwd` with forward slashes on every platform. |
-| `source` | handlers: `msw-http`/`msw-rest`; calls: `fetch`/`axios` | Which API produced the record. |
+| `source` | handlers: `msw-http`/`msw-rest`; calls: `fetch`/`axios`/`wrapper` | Which API produced the record. |
 
 ## Summary
 

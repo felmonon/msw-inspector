@@ -118,10 +118,17 @@ npx msw-inspector \
   --handlers "src/**/*.{ts,tsx,js,jsx,mts,mjs,cjs}" \
   --sources "src/**/*.{ts,tsx,js,jsx,mts,mjs,cjs}" \
   --exclude "**/dist/**" "**/*.d.ts" \
+  --wrappers apiGet apiPost \
   --base-url "https://api.example.com" \
   --report-file msw-inspector.json \
   --format text
 ```
+
+Use `--wrappers apiGet apiPost` (or `--wrappers apiGet,apiPost`) when request
+helpers are declared and called in the same file. The scanner resolves each
+helper's first argument. Names ending in an HTTP verb, such as `apiGet` or
+`apiPost`, use that method; other names are reported with method `UNKNOWN`.
+Dynamic arguments remain unsupported instead of being guessed.
 
 For copy-paste setups, see [`docs/examples/vite-vitest.md`](docs/examples/vite-vitest.md)
 for Vite + Vitest and [`docs/examples/nextjs.md`](docs/examples/nextjs.md) for
@@ -211,6 +218,7 @@ The first release is intentionally narrow:
 - handler matchers from string literals, static template literals, static `const`s, `new URL(...).href`, `new URL(...).toString()`, and `String(new URL(...))`
 - `fetch(...)`, `window.fetch(...)`, `globalThis.fetch(...)`, and `fetch(new Request(...))` with static arguments
 - common `axios` call shapes, including `axios.get(...)`, `axios.request(...)`, `axios(...)`, and same-file `axios.create(...)` instances
+- explicitly configured same-file request wrappers with a static first argument
 
 Unsupported dynamic or ambiguous patterns are included in the report so you can decide whether to simplify the code, add explicit handlers, or ignore the pattern.
 
@@ -263,7 +271,7 @@ console.log(formatCoverageReport(report))
 
 ## Limitations
 
-- It does not try to infer custom wrapper helpers.
+- It does not resolve imported request wrapper helpers.
 - It does not resolve cross-file constants or imported axios instances.
 - It does not analyze GraphQL, WebSocket, or SSE handlers.
 - It reports dynamic or ambiguous patterns as unsupported instead of guessing.

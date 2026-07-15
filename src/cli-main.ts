@@ -33,6 +33,7 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
     .option('--handlers <globs...>', 'Override handler file globs.', DEFAULT_HANDLER_GLOBS)
     .option('--sources <globs...>', 'Override source file globs.', DEFAULT_SOURCE_GLOBS)
     .option('--exclude <globs...>', 'Exclude file globs.', DEFAULT_EXCLUDE_GLOBS)
+    .option('--wrappers <names...>', 'Treat named same-file request helpers as API calls.')
     .option('--base-url <url>', 'Resolve relative handlers and calls against this base URL.')
     .option('--format <format>', 'Output format: text or json.', 'text')
     .option('--limit <count>', 'Maximum entries listed in each text-output detail section.', String(DEFAULT_FORMAT_LIMIT))
@@ -72,6 +73,7 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
         handlerGlobs: options.handlers,
         sourceGlobs: options.sources,
         excludeGlobs: options.exclude,
+        wrapperNames: normalizeWrapperNames(options.wrappers),
       })
 
       const json = JSON.stringify(report, null, 2)
@@ -123,4 +125,17 @@ export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<num
   }
 
   return exitCode
+}
+
+function normalizeWrapperNames(values: string[] | undefined): string[] | undefined {
+  if (!values) {
+    return undefined
+  }
+
+  const names = values
+    .flatMap((value) => value.split(','))
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  return names.length > 0 ? [...new Set(names)] : undefined
 }

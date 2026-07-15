@@ -100,6 +100,34 @@ describe('runCli', () => {
     expect(report.summary.unmockedCalls).toBe(1)
   })
 
+  it('passes comma-separated --wrappers names to the analyzer', async () => {
+    const cwd = await createProject()
+    await writeFile(
+      path.join(cwd, 'src', 'api', 'wrappers.ts'),
+      `
+        function apiGet(url: string) { return url }
+        const apiPost = (url: string) => url
+        const apiRequest = (url: string) => url
+
+        apiGet('/users/456')
+        apiPost('/orders')
+        apiRequest('/users/789')
+      `,
+      'utf8',
+    )
+
+    const result = await run(['--cwd', cwd, '--wrappers', 'apiGet,apiPost,apiRequest', '--format', 'json'])
+
+    expect(result.code).toBe(0)
+    const report = JSON.parse(result.stdout)
+    expect(report.apiCalls.filter((call: { source: string }) => call.source === 'wrapper')).toMatchObject([
+      { method: 'GET', pattern: { normalized: '/users/456' } },
+      { method: 'POST', pattern: { normalized: '/orders' } },
+      { method: 'UNKNOWN', pattern: { normalized: '/users/789' } },
+    ])
+    expect(report.summary.ambiguousCalls).toBe(1)
+  })
+
   it('writes the JSON report to --report-file with a trailing newline', async () => {
     const cwd = await createProject()
     const result = await run(['--cwd', cwd, '--report-file', 'out/msw-inspector.json'])
