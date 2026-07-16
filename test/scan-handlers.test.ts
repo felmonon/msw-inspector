@@ -197,4 +197,24 @@ describe('scanHandlers', () => {
     ])
     expect(result.unsupported).toEqual([])
   })
+
+  it('detects GraphQL query, mutation, and operation handlers', async () => {
+    const result = await scanHandlerSource(`
+      import { graphql as gql } from 'msw'
+      import * as msw from 'msw'
+
+      export const handlers = [
+        gql.query('GetUser', () => null),
+        gql.mutation(\`UpdateUser\`, () => null),
+        msw.graphql.operation(() => null),
+      ]
+    `)
+
+    expect(result.unsupported).toEqual([])
+    expect(result.handlers.map((handler) => [handler.kind, handler.source, handler.method, handler.pattern.normalized])).toEqual([
+      ['graphql', 'msw-graphql', 'QUERY', 'GetUser'],
+      ['graphql', 'msw-graphql', 'MUTATION', 'UpdateUser'],
+      ['graphql', 'msw-graphql', 'OPERATION', '*'],
+    ])
+  })
 })

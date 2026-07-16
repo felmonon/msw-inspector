@@ -118,6 +118,9 @@ function methodsMatch(call: ApiCallRecord, handler: HandlerRecord): boolean {
 }
 
 function handlerMatches(call: ApiCallRecord, handler: HandlerRecord): boolean {
+  if (handler.kind === 'graphql') {
+    return false
+  }
   if (!methodsMatch(call, handler)) {
     return false
   }
@@ -138,6 +141,9 @@ function findMatches(call: ApiCallRecord, handlers: HandlerRecord[]): HandlerRec
 }
 
 function patternMatches(call: ApiCallRecord, handler: HandlerRecord): boolean {
+  if (handler.kind === 'graphql') {
+    return false
+  }
   if (handler.pattern.kind === 'path') {
     return matchesPath(call, handler)
   }
@@ -162,12 +168,16 @@ export function buildCoverageReport(input: {
   apiCalls: ApiCallRecord[]
   unsupported?: UnsupportedPattern[]
 }): CoverageReport {
+  // GraphQL handlers are inventory-only until GraphQL client calls can be
+  // scanned. Excluding them from the assessed set prevents valid handlers
+  // from being reported as stale deletion candidates.
+  const assessedHandlers = input.handlers.filter((handler) => handler.kind !== 'graphql')
   const matches: CoverageMatch[] = []
   const mockedCallIds = new Set<string>()
   const usedHandlerIds = new Set<string>()
 
   for (const call of input.apiCalls) {
-    const matched = findMatches(call, input.handlers)
+    const matched = findMatches(call, assessedHandlers)
     const [primary] = matched
     if (!primary) {
       continue
@@ -194,7 +204,7 @@ export function buildCoverageReport(input: {
       continue
     }
 
-    const pathMatched = call.method === 'UNKNOWN' ? input.handlers.filter((handler) => patternMatches(call, handler)) : []
+    const pathMatched = call.method === 'UNKNOWN' ? assessedHandlers.filter((handler) => patternMatches(call, handler)) : []
     if (pathMatched.length > 0) {
       ambiguousCallIds.push(call.id)
       for (const handler of pathMatched) {
@@ -205,7 +215,7 @@ export function buildCoverageReport(input: {
     }
   }
 
-  const staleHandlerIds = input.handlers.filter((handler) => !usedHandlerIds.has(handler.id)).map((handler) => handler.id)
+  const staleHandlerIds = assessedHandlers.filter((handler) => !usedHandlerIds.has(handler.id)).map((handler) => handler.id)
 
   return {
     schemaVersion: 1,
@@ -222,7 +232,7 @@ export function buildCoverageReport(input: {
       mockedCalls: mockedCallIds.size,
       totalCalls: input.apiCalls.length,
       usedHandlers: usedHandlerIds.size,
-      totalHandlers: input.handlers.length,
+      totalHandlers: assessedHandlers.length,
       staleHandlers: staleHandlerIds.length,
       unmockedCalls: unmockedCallIds.length,
       ambiguousCalls: ambiguousCallIds.length,

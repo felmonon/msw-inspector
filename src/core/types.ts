@@ -9,6 +9,9 @@ export type HttpMethod =
   | 'ALL'
   | 'UNKNOWN'
 
+export type GraphqlOperation = 'QUERY' | 'MUTATION' | 'OPERATION'
+export type HandlerKind = 'http' | 'graphql'
+
 export type PatternKind = 'path' | 'regexp' | 'unknown'
 
 export interface SourceLocation {
@@ -27,10 +30,11 @@ export interface RoutePattern {
 
 export interface HandlerRecord {
   id: string
-  method: HttpMethod
+  method: HttpMethod | GraphqlOperation
+  kind?: HandlerKind
   pattern: RoutePattern
   location: SourceLocation
-  source: 'msw-http' | 'msw-rest'
+  source: 'msw-http' | 'msw-rest' | 'msw-graphql'
 }
 
 export interface ApiCallRecord {

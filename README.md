@@ -215,6 +215,7 @@ The first release is intentionally narrow:
 
 - `msw` `http.*` handlers
 - legacy `msw` `rest.*` handlers
+- `msw` `graphql.query`, `graphql.mutation`, and `graphql.operation` handlers (reported with `kind: graphql`)
 - handler matchers from string literals, static template literals, static `const`s, `new URL(...).href`, `new URL(...).toString()`, and `String(new URL(...))`
 - `fetch(...)`, `window.fetch(...)`, `globalThis.fetch(...)`, and `fetch(new Request(...))` with static arguments
 - common `axios` call shapes, including `axios.get(...)`, `axios.request(...)`, `axios(...)`, and same-file `axios.create(...)` instances
@@ -273,7 +274,7 @@ console.log(formatCoverageReport(report))
 
 - It does not resolve imported request wrapper helpers.
 - It does not resolve cross-file constants or imported axios instances.
-- It does not analyze GraphQL, WebSocket, or SSE handlers.
+- It does not match GraphQL operations to client calls yet, or analyze WebSocket or SSE handlers.
 - It reports dynamic or ambiguous patterns as unsupported instead of guessing.
 - Calls whose HTTP method cannot be resolved statically are reported as `ambiguousCalls` when their path matches a handler; they never count as mocked or unmocked, and `--fail-on-unmocked` ignores them.
 

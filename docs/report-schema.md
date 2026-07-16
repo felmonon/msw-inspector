@@ -17,14 +17,14 @@ The JSON report written by `--report-file` (and printed by `--format json`) is a
 | `apiCalls` | `ApiCallRecord[]` | Every statically resolved `fetch`/`axios`/configured wrapper call, sorted by file, line, column. |
 | `matches` | `{callId, handlerId}[]` | One entry per mocked call, pointing at the first handler that matched it. |
 | `mockedCallIds` | `string[]` | Calls covered by at least one handler. |
-| `usedHandlerIds` | `string[]` | Handlers matched by at least one call, including every handler that matches a mocked call and handlers whose path matches an ambiguous call. |
-| `staleHandlerIds` | `string[]` | Handlers matched by nothing — candidates for deletion. |
+| `usedHandlerIds` | `string[]` | Assessed HTTP handlers matched by at least one call, including every handler that matches a mocked call and handlers whose path matches an ambiguous call. |
+| `staleHandlerIds` | `string[]` | Assessed HTTP handlers matched by nothing — candidates for deletion. GraphQL handlers are excluded until GraphQL client calls can be scanned. |
 | `unmockedCallIds` | `string[]` | Calls no handler covers — the coverage gaps. |
 | `ambiguousCallIds` | `string[]` | Calls whose HTTP method could not be resolved statically but whose path matches a handler. Not counted as mocked or unmocked; `--fail-on-unmocked` ignores them. |
 | `unsupported` | `UnsupportedPattern[]` | Code shapes the scanner refused to guess about, with a reason and the exact expression text. |
 | `summary` | `CoverageSummary` | The counts below. |
 
-Every call is in exactly one of `mockedCallIds`, `unmockedCallIds`, or `ambiguousCallIds`. Every handler is in exactly one of `usedHandlerIds` or `staleHandlerIds`.
+Every call is in exactly one of `mockedCallIds`, `unmockedCallIds`, or `ambiguousCallIds`. Every assessed HTTP handler is in exactly one of `usedHandlerIds` or `staleHandlerIds`. GraphQL handlers remain visible in `handlers` as inventory records but are unassessed: they appear in neither lifecycle list and cannot affect `--fail-on-stale`.
 
 ## Records
 
@@ -33,22 +33,23 @@ Every call is in exactly one of `mockedCallIds`, `unmockedCallIds`, or `ambiguou
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `id` | `string` | Stable identifier built from location, source, method, and pattern. Stable across machines because paths are repo-relative. |
-| `method` | `GET`/`POST`/`PUT`/`PATCH`/`DELETE`/`HEAD`/`OPTIONS`/`ALL`/`UNKNOWN` | `ALL` only appears on handlers; `UNKNOWN` means the method could not be resolved statically. |
+| `kind` | handlers: `http`/`graphql` | Handler protocol. Older schema-v1 HTTP records may omit this field; omitted means `http`. |
+| `method` | HTTP: `GET`/`POST`/`PUT`/`PATCH`/`DELETE`/`HEAD`/`OPTIONS`/`ALL`/`UNKNOWN`; GraphQL: `QUERY`/`MUTATION`/`OPERATION` | `ALL` only appears on HTTP handlers; `UNKNOWN` means the HTTP method could not be resolved statically. |
 | `pattern.raw` | `string` | The matcher or URL as written (query/hash stripped for URLs). |
 | `pattern.kind` | `path`/`regexp`/`unknown` | How the pattern is matched. |
 | `pattern.normalized` | `string` | Canonical form: `origin + pathname` for absolute URLs, leading-slash pathname otherwise. |
 | `pattern.pathname` | `string \| null` | Pathname component when `kind` is `path`. |
 | `pattern.origin` | `string \| null` | Origin when the pattern is absolute or resolved via `--base-url`. |
 | `location` | `{filePath, line, column}` | 1-based position. `filePath` is relative to `--cwd` with forward slashes on every platform. |
-| `source` | handlers: `msw-http`/`msw-rest`; calls: `fetch`/`axios`/`wrapper` | Which API produced the record. |
+| `source` | handlers: `msw-http`/`msw-rest`/`msw-graphql`; calls: `fetch`/`axios`/`wrapper` | Which API produced the record. |
 
 ## Summary
 
 | Field | Meaning |
 | --- | --- |
 | `mockedCalls` / `totalCalls` | Covered calls over all resolved calls. |
-| `usedHandlers` / `totalHandlers` | Handlers matched by anything over all resolved handlers. |
-| `staleHandlers` | `totalHandlers - usedHandlers`. |
+| `usedHandlers` / `totalHandlers` | Assessed HTTP handlers matched by anything over all assessed HTTP handlers. GraphQL inventory records are excluded from both counts. |
+| `staleHandlers` | `totalHandlers - usedHandlers`; GraphQL handlers never contribute. |
 | `unmockedCalls` | Calls with no covering handler (excludes ambiguous calls). |
 | `ambiguousCalls` | Unknown-method calls whose path matches a handler. |
 | `percentage` | `mockedCalls / totalCalls` rounded to one decimal; `100` when `totalCalls` is `0`. |

@@ -21,7 +21,7 @@ describe('coverage report schema', () => {
     await writeFile(
       path.join(mocksDir, 'handlers.ts'),
       `
-        import { http, rest } from 'msw'
+        import { graphql, http, rest } from 'msw'
 
         const dynamic = Math.random() > 0.5 ? '/a' : '/b'
 
@@ -30,6 +30,7 @@ describe('coverage report schema', () => {
           http.get('/stale', () => null),
           http.post('/profile', () => null),
           rest.get(/legacy/, () => null),
+          graphql.query('GetViewer', () => null),
           http.put(dynamic, () => null),
         ]
       `,
@@ -63,6 +64,10 @@ describe('coverage report schema', () => {
     expect(report.summary.staleHandlers).toBeGreaterThan(0)
     expect(report.unsupported.length).toBeGreaterThan(0)
     expect(report.apiCalls.some((call) => call.source === 'wrapper')).toBe(true)
+    expect(report.handlers).toContainEqual(expect.objectContaining({ kind: 'graphql', source: 'msw-graphql' }))
+    const graphqlHandler = report.handlers.find((handler) => handler.kind === 'graphql')
+    expect(report.usedHandlerIds).not.toContain(graphqlHandler?.id)
+    expect(report.staleHandlerIds).not.toContain(graphqlHandler?.id)
 
     const schemaPath = path.join(process.cwd(), 'schema', 'coverage-report.v1.json')
     const schema = JSON.parse(await readFile(schemaPath, 'utf8'))
