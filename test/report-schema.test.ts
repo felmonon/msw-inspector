@@ -65,6 +65,9 @@ describe('coverage report schema', () => {
     expect(report.unsupported.length).toBeGreaterThan(0)
     expect(report.apiCalls.some((call) => call.source === 'wrapper')).toBe(true)
     expect(report.handlers).toContainEqual(expect.objectContaining({ kind: 'graphql', source: 'msw-graphql' }))
+    const graphqlHandler = report.handlers.find((handler) => handler.kind === 'graphql')
+    expect(report.usedHandlerIds).not.toContain(graphqlHandler?.id)
+    expect(report.staleHandlerIds).not.toContain(graphqlHandler?.id)
 
     const schemaPath = path.join(process.cwd(), 'schema', 'coverage-report.v1.json')
     const schema = JSON.parse(await readFile(schemaPath, 'utf8'))

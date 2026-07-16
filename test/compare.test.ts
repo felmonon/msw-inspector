@@ -8,6 +8,7 @@ function handler(input: Partial<HandlerRecord> & Pick<HandlerRecord, 'id'>): Han
   return {
     id: input.id,
     method: input.method ?? 'GET',
+    kind: input.kind,
     pattern: input.pattern ?? createPathPattern('/users/:id'),
     location: input.location ?? { filePath: 'handlers.ts', line: 1, column: 1 },
     source: input.source ?? 'msw-http',
@@ -48,6 +49,26 @@ describe('buildCoverageReport', () => {
     expect(report.summary.staleHandlers).toBe(1)
     expect(report.unmockedCallIds).toEqual(['c1'])
     expect(report.staleHandlerIds).toEqual(['h1'])
+  })
+
+  it('keeps GraphQL handlers in inventory without treating them as stale', () => {
+    const report = buildCoverageReport({
+      handlers: [
+        handler({
+          id: 'g1',
+          kind: 'graphql',
+          method: 'QUERY',
+          source: 'msw-graphql',
+          pattern: createPathPattern('GetViewer'),
+        }),
+      ],
+      apiCalls: [],
+    })
+
+    expect(report.handlers.map(({ id }) => id)).toEqual(['g1'])
+    expect(report.usedHandlerIds).toEqual([])
+    expect(report.staleHandlerIds).toEqual([])
+    expect(report.summary).toMatchObject({ totalHandlers: 0, usedHandlers: 0, staleHandlers: 0 })
   })
 
   it('allows absolute API calls to match relative handlers by pathname', () => {
